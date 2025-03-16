@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dark-mode.css">
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
+    <div id="loading" class="loading hidden"></div>
+
+    <!-- Login Section -->
+    <div id="loginSection" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-96">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Login</h2>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                    <input type="text" id="username" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                    <input type="password" id="password" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Section -->
+    <div id="adminSection" class="hidden min-h-screen">
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 shadow">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <h1 class="text-xl font-bold text-gray-800 dark:text-white">Job Management System</h1>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Dark Mode Toggle -->
+                    <div class="flex items-center">
+                        <span class="text-gray-700 dark:text-gray-300 mr-2"><i class="bi bi-moon"></i></span>
+                        <label class="switch">
+                            <input type="checkbox" id="darkModeToggle">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="text-gray-700 dark:text-gray-300 ml-2"><i class="bi bi-sun"></i></span>
+                    </div>
+                    
+                    <!-- User Info -->
+                    <div class="flex items-center">
+                        <span class="text-gray-700 dark:text-gray-300 mr-2"><i class="bi bi-person-circle"></i></span>
+                        <div>
+                            <span id="currentUserName" class="text-gray-800 dark:text-white font-medium">User</span>
+                            <span class="text-gray-500 dark:text-gray-400 text-xs">(<span id="currentUserRole">role</span>)</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Logout Button -->
+                    <button id="logoutButton" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+                        <i class="bi bi-box-arrow-right mr-1"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-6">
+            <!-- Navigation -->
+            <div id="adminNavigation" class="mb-6">
+                <nav>
+                    <ul class="flex flex-wrap">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link active" data-page="dashboard">
+                                <i class="bi bi-speedometer2 mr-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item" id="usersNav">
+                            <a href="#" class="nav-link" data-page="users">
+                                <i class="bi bi-people mr-2"></i>Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="products">
+                                <i class="bi bi-box mr-2"></i>Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="jobs">
+                                <i class="bi bi-briefcase mr-2"></i>Jobs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="payments">
+                                <i class="bi bi-cash-coin mr-2"></i>Payments
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="reports">
+                                <i class="bi bi-file-earmark-bar-graph mr-2"></i>Reports
+                            </a>
+                        </li>
+                        <li class="nav-item" id="settingsNav">
+                            <a href="#" class="nav-link" data-page="settings">
+                                <i class="bi bi-gear mr-2"></i>Settings
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page-section active">
+                <!-- Admin Dashboard Overview - Only visible to admin and subadmin -->
+                <div id="adminDashboard" class="hidden mb-8">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+                        <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Dashboard Overview</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="p-4 bg-blue-100 dark:bg-blue-900 rounded">
+                                <h4 class="font-bold text-blue-800 dark:text-blue-200">Total Users</h4>
+                                <p id="totalUsers" class="text-2xl font-bold text-blue-600 dark:text-blue-300">0</p>
+                            </div>
+                            <div class="p-4 bg-green-100 dark:bg-green-900 rounded">
+                                <h4 class="font-bold text-green-800 dark:text-green-200">Total Products</h4>
+                                <p id="totalProducts" class="text-2xl font-bold text-green-600 dark:text-green-300">0</p>
+                            </div>
+                            <div class="p-4 bg-purple-100 dark:bg-purple-900 rounded">
+                                <h4 class="font-bold text-purple-800 dark:text-purple-200">Total Jobs</h4>
+                                <p id="totalJobs" class="text-2xl font-bold text-purple-600 dark:text-purple-300">0</p>
+                            </div>
+                            <div class="p-4 bg-yellow-100 dark:bg-yellow-900 rounded">
+                                <h4 class="font-bold text-yellow-800 dark:text-yellow-200">Total Payments</h4>
+                                <p id="dashboardTotalPayments" class="text-2xl font-bold text-yellow-600 dark:text-yellow-300">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Dashboard -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Recent Jobs</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Job Title</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Client</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Status</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Due Date</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentJobsList">
+                                <!-- Recent jobs will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Users Page -->
+            <div id="users-page" class="page-section">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add User</h3>
+                    <form id="userForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                                <input type="text" id="userUsername" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                                <input type="password" id="userPassword" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Name</label>
+                                <input type="text" id="userName" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                                <input type="email" id="userEmail" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Phone</label>
+                                <input type="text" id="userPhone" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Role</label>
+                                <select id="userRole" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <option value="admin">Admin</option>
+                                    <option value="subadmin">Sub Admin</option>
+                                    <option value="user">User</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="userActive" class="mr-2">
+                                <label class="text-gray-700 dark:text-gray-300">Active</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add User</button>
+                    </form>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Users List</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Name</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Username</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Email</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Role</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Status</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersList">
+                                <!-- Users will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Products Page -->
+            <div id="products-page" class="page-section">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add Product</h3>
+                    <form id="productForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Product Name</label>
+                                <input type="text" id="productName" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Rate</label>
+                                <input type="number" id="productRate" step="0.01" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                        </div>
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add Product</button>
+                    </form>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Products List</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Product Name</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Rate</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsList">
+                                <!-- Products will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Jobs Page -->
+            <div id="jobs-page" class="page-section">
+                <!-- Jobs content will be here -->
+            </div>
+            
+            <!-- Payments Page -->
+            <div id="payments-page" class="page-section">
+                <!-- Payments content will be here -->
+            </div>
+            
+            <!-- Reports Page -->
+            <div id="reports-page" class="page-section">
+                <!-- Reports content will be here -->
+            </div>
+            
+            <!-- Settings Page -->
+            <div id="settings-page" class="page-section">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">System Settings</h3>
+                    <form id="settingsForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Company Name</label>
+                                <input type="text" id="companyName" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Currency Symbol</label>
+                                <input type="text" id="currencySymbol" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Items Per Page</label>
+                                <input type="number" id="itemsPerPage" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Session Timeout (minutes)</label>
+                                <input type="number" id="sessionTimeout" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="requireStrongPasswords" class="mr-2">
+                                <label class="text-gray-700 dark:text-gray-300">Require Strong Passwords</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="js/app.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/users.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/jobs.js"></script>
+    <script src="js/payments.js"></script>
+    <script src="js/reports.js"></script>
+    <script src="js/settings.js"></script>
+</body>
+</html> 

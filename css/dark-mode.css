@@ -1,0 +1,32 @@
+/* Dark mode styles */
+.dark #adminNavigation nav {
+    background-color: #2d3748;
+}
+.dark .nav-link {
+    color: #e2e8f0;
+}
+.dark .nav-link:hover {
+    background-color: #4a5568;
+}
+.dark .nav-link.active {
+    background-color: #4299e1;
+}
+
+/* Page Sections */
+.page-section {
+    display: none;
+}
+.page-section.active {
+    display: block;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    #adminNavigation ul {
+        flex-direction: column;
+    }
+    .nav-link {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+} 

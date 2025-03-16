@@ -1,0 +1,2573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<style>
+    body { font-family: 'Inter', sans-serif; }
+    .loading {
+        @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+    }
+    .loading::after {
+        content: "";
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .error-message {
+        @apply text-red-500 text-sm mt-1;
+    }
+    .input-error {
+        @apply border-red-500;
+    }
+    .pagination {
+        @apply flex justify-center mt-4 space-x-2;
+    }
+    .pagination-btn {
+        @apply px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500;
+    }
+    .pagination-btn.active {
+        @apply bg-blue-500 text-white hover:bg-blue-600;
+    }
+    .sortable {
+        @apply cursor-pointer relative;
+    }
+    .sortable:hover:after {
+        content: "↕";
+        @apply ml-1 text-gray-400;
+    }
+    .sortable.asc:after {
+        content: "↑";
+        @apply ml-1 text-gray-600;
+    }
+    .sortable.desc:after {
+        content: "↓";
+        @apply ml-1 text-gray-600;
+    }
+    
+    /* Navigation Styles */
+    #adminNavigation {
+        margin-bottom: 20px;
+    }
+    #adminNavigation nav {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    #adminNavigation ul {
+        display: flex;
+        flex-wrap: wrap;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .nav-item {
+        margin: 0;
+        padding: 0;
+    }
+    .nav-link {
+        display: block;
+        padding: 12px 16px;
+        color: #333;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    .nav-link:hover {
+        background-color: #e9ecef;
+    }
+    .nav-link.active {
+        background-color: #3490dc;
+        color: white;
+    }
+    
+    /* Dark mode styles */
+    .dark #adminNavigation nav {
+        background-color: #2d3748;
+    }
+    .dark .nav-link {
+        color: #e2e8f0;
+    }
+    .dark .nav-link:hover {
+        background-color: #4a5568;
+    }
+    .dark .nav-link.active {
+        background-color: #4299e1;
+    }
+    
+    /* Page Sections */
+    .page-section {
+        display: none;
+    }
+    .page-section.active {
+        display: block;
+    }
+    
+    /* Responsive styles */
+    @media (max-width: 768px) {
+        #adminNavigation ul {
+            flex-direction: column;
+        }
+        .nav-link {
+            padding: 10px 12px;
+            font-size: 14px;
+        }
+    }
+</style>
+<body class="bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
+    <div id="loading" class="loading hidden"></div>
+
+    <!-- Login Section -->
+    <div id="loginSection" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-96">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Login</h2>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                    <input type="text" id="username" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                    <input type="password" id="password" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="hidden">
+        <nav class="bg-white dark:bg-gray-800 shadow-lg">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <span class="text-xl font-bold text-gray-800 dark:text-white">Job Management System</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span id="userDisplay" class="text-gray-700 dark:text-gray-300"></span>
+                        <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                            <i class="bi bi-moon-fill dark:text-white"></i>
+                        </button>
+                        <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mx-auto px-4 py-8">
+            <!-- Admin Panel Status Indicator - For debugging -->
+            <div id="adminPanelStatus" class="mb-4 p-3 bg-blue-100 dark:bg-blue-900 rounded-lg text-blue-800 dark:text-blue-200 hidden">
+                <p>Admin panel is active for <span id="adminRoleDisplay"></span></p>
+            </div>
+            
+            <!-- Navigation Menu - Only for admin and subadmin -->
+            <div id="adminNavigation" class="mb-6 hidden">
+                <nav class="bg-gray-100 dark:bg-gray-700 rounded-lg shadow-sm">
+                    <ul class="flex flex-wrap">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link active" data-page="dashboard">
+                                <i class="bi bi-speedometer2 mr-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="user-product">
+                                <i class="bi bi-people mr-2"></i>User & Product
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="job-management">
+                                <i class="bi bi-plus-circle mr-2"></i>Add Job
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="job-listings">
+                                <i class="bi bi-list-check mr-2"></i>Job Listings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="payments">
+                                <i class="bi bi-cash-coin mr-2"></i>Payments
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="reports">
+                                <i class="bi bi-file-earmark-bar-graph mr-2"></i>Reports
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="settings">
+                                <i class="bi bi-gear mr-2"></i>Settings
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page-section active">
+                <!-- Admin Dashboard Overview - Only visible to admin and subadmin -->
+                <div id="adminDashboard" class="hidden mb-8">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+                        <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Dashboard Overview</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="p-4 bg-blue-100 dark:bg-blue-900 rounded">
+                                <h4 class="font-bold text-blue-800 dark:text-blue-200">Total Users</h4>
+                                <p id="totalUsers" class="text-2xl font-bold text-blue-600 dark:text-blue-300">0</p>
+                            </div>
+                            <div class="p-4 bg-green-100 dark:bg-green-900 rounded">
+                                <h4 class="font-bold text-green-800 dark:text-green-200">Total Products</h4>
+                                <p id="totalProducts" class="text-2xl font-bold text-green-600 dark:text-green-300">0</p>
+                            </div>
+                            <div class="p-4 bg-purple-100 dark:bg-purple-900 rounded">
+                                <h4 class="font-bold text-purple-800 dark:text-purple-200">Total Jobs</h4>
+                                <p id="totalJobs" class="text-2xl font-bold text-purple-600 dark:text-purple-300">0</p>
+                            </div>
+                            <div class="p-4 bg-yellow-100 dark:bg-yellow-900 rounded">
+                                <h4 class="font-bold text-yellow-800 dark:text-yellow-200">Total Payments</h4>
+                                <p id="dashboardTotalPayments" class="text-2xl font-bold text-yellow-600 dark:text-yellow-300">0</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Top Vendors Chart -->
+                        <div class="mt-6">
+                            <h4 class="font-bold text-gray-800 dark:text-white mb-2">Top Vendors by Jobs</h4>
+                            <div id="topVendorsChart" class="h-48 bg-gray-100 dark:bg-gray-700 rounded p-4">
+                                <!-- Vendor bars will be rendered here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Monthly Summary -->
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Monthly Summary</h3>
+                        <div id="monthlySummary" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="p-4 bg-blue-100 dark:bg-blue-900 rounded">
+                                <h4 class="font-bold text-blue-800 dark:text-blue-200">Total Earnings</h4>
+                                <p id="totalEarnings" class="text-2xl font-bold text-blue-600 dark:text-blue-300">₹0</p>
+                            </div>
+                            <div class="p-4 bg-green-100 dark:bg-green-900 rounded">
+                                <h4 class="font-bold text-green-800 dark:text-green-200">Payments Made</h4>
+                                <p id="totalPayments" class="text-2xl font-bold text-green-600 dark:text-green-300">₹0</p>
+                            </div>
+                            <div class="p-4 bg-purple-100 dark:bg-purple-900 rounded">
+                                <h4 class="font-bold text-purple-800 dark:text-purple-200">Balance</h4>
+                                <p id="balance" class="text-2xl font-bold text-purple-600 dark:text-purple-300">₹0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User & Product Management Page -->
+            <div id="user-product-page" class="page-section">
+                <!-- Admin Controls -->
+                <div id="adminControls" class="hidden mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- User Management -->
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">User Management</h3>
+                            <form id="userForm" class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="text" placeholder="Username" id="newUsername" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <input type="password" placeholder="Password" id="newPassword" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <select id="userRole" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="">Select Role</option>
+                                        <option value="vendor">Vendor</option>
+                                        <option value="subadmin">Sub Admin</option>
+                                    </select>
+                                    <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Add User</button>
+                                </div>
+                                <div id="userFormErrors" class="text-red-500 mt-2"></div>
+                            </form>
+                            
+                            <!-- Users List -->
+                            <div class="mt-4">
+                                <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Current Users</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full table-auto">
+                                        <thead>
+                                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                                <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Username</th>
+                                                <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Role</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="usersList"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Management -->
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Product Management</h3>
+                            <form id="productForm" class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="text" placeholder="Product Name" id="productName" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <input type="number" placeholder="Rate (₹)" id="productRate" step="0.01" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Add Product</button>
+                                </div>
+                            </form>
+                            
+                            <!-- Products List -->
+                            <div class="mt-4">
+                                <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Current Products</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full table-auto">
+                                        <thead>
+                                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                                <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Product Name</th>
+                                                <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Rate</th>
+                                                <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="productsList"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Job Management Page -->
+            <div id="job-management-page" class="page-section">
+                <!-- Job Management -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Job Management</h3>
+                    <form id="jobForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <input type="date" id="jobDate" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <input type="text" placeholder="Client Name" id="clientName" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <select id="vendorSelect" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="">Select vendor</option>
+                            </select>
+                            <select id="productSelect" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="">Select Product</option>
+                            </select>
+                            <input type="number" placeholder="Quantity" id="quantity" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <input type="text" placeholder="Description" id="description" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add Job</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Job Listings Page -->
+            <div id="job-listings-page" class="page-section">
+                <!-- Job Listings -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Job Listings</h3>
+                        <input type="month" id="monthFilter" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full table-auto">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Date</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Client</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Product</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Description</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Quantity</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Rate</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Total</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobsList"></tbody>
+                        </table>
+                    </div>
+                    <div id="jobsPagination" class="pagination"></div>
+                </div>
+            </div>
+            
+            <!-- Payments Page -->
+            <div id="payments-page" class="page-section">
+                <!-- Partial Payments -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Partial Payments</h3>
+                    <form id="paymentForm" class="space-y-4 admin-only">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <select id="paymentvendor" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="">Select vendor</option>
+                            </select>
+                            <input type="number" placeholder="Amount" id="paymentAmount" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <input type="date" id="paymentDate" class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add Payment</button>
+                    </form>
+                    <div class="mt-4 overflow-x-auto">
+                        <table class="min-w-full table-auto">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Date</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Amount</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paymentsList"></tbody>
+                        </table>
+                    </div>
+                    <div id="paymentsPagination" class="pagination"></div>
+                </div>
+            </div>
+            
+            <!-- Reports Page -->
+            <div id="reports-page" class="page-section">
+                <!-- Reports Section - Admin Only -->
+                <div id="reportsSection" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mt-8 admin-only">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Generate Reports</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Date Range Report -->
+                        <div class="border dark:border-gray-700 rounded-lg p-4">
+                            <h4 class="font-bold text-gray-800 dark:text-white mb-3">Date Range Report</h4>
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                                        <input type="date" id="reportStartDate" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                                        <input type="date" id="reportEndDate" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                </div>
+                                <button onclick="generateDateRangeReport()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+                                    Generate Report
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Vendor Report -->
+                        <div class="border dark:border-gray-700 rounded-lg p-4">
+                            <h4 class="font-bold text-gray-800 dark:text-white mb-3">Vendor Report</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-gray-700 dark:text-gray-300 mb-1">Select Vendor</label>
+                                    <select id="reportVendor" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="">All Vendors</option>
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-gray-700 dark:text-gray-300 mb-1">Month</label>
+                                        <input type="month" id="reportVendorMonth" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                </div>
+                                <button onclick="generateVendorReport()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+                                    Generate Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Report Output -->
+                    <div id="reportOutput" class="mt-6 hidden">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-bold text-gray-800 dark:text-white">Report Results</h4>
+                            <div>
+                                <button onclick="printReport()" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1 rounded mr-2 hover:bg-gray-300 dark:hover:bg-gray-600">
+                                    <i class="bi bi-printer"></i> Print
+                                </button>
+                                <button onclick="exportReportCSV()" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">
+                                    <i class="bi bi-file-earmark-excel"></i> Export CSV
+                                </button>
+                            </div>
+                        </div>
+                        <div id="reportContent" class="border dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+                            <!-- Report content will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Page -->
+            <div id="settings-page" class="page-section">
+                <!-- System Settings - Admin Only -->
+                <div id="settingsSection" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mt-8 admin-only">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">System Settings</h3>
+                    
+                    <form id="settingsForm" class="space-y-6">
+                        <!-- General Settings -->
+                        <div class="border dark:border-gray-700 rounded-lg p-4">
+                            <h4 class="font-bold text-gray-800 dark:text-white mb-3">General Settings</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-gray-700 dark:text-gray-300 mb-1">Company Name</label>
+                                    <input type="text" id="companyName" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 dark:text-gray-300 mb-1">Currency Symbol</label>
+                                    <input type="text" id="currencySymbol" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="₹">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 dark:text-gray-300 mb-1">Items Per Page</label>
+                                    <select id="itemsPerPage" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="5">5</option>
+                                        <option value="10">10</option>
+                                        <option value="20">20</option>
+                                        <option value="50">50</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Security Settings -->
+                        <div class="border dark:border-gray-700 rounded-lg p-4">
+                            <h4 class="font-bold text-gray-800 dark:text-white mb-3">Security Settings</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-gray-700 dark:text-gray-300 mb-1">Session Timeout (minutes)</label>
+                                    <input type="number" id="sessionTimeout" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" min="5" max="120">
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="requireStrongPasswords" class="mr-2">
+                                    <label class="text-gray-700 dark:text-gray-300">Require Strong Passwords</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+                            Save Settings
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Backup & Restore Section - Admin Only -->
+                <div id="backupSection" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mt-8 admin-only">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Backup & Restore</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Backup -->
+                        <div class="border dark:border-gray-700 rounded-lg p-4">
+                            <h4 class="font-bold text-gray-800 dark:text-white mb-3">Backup Data</h4>
+                            <p class="text-gray-600 dark:text-gray-400 mb-4">Create a backup of all your data that you can download and save.</p>
+                            <button onclick="createBackup()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+                                <i class="bi bi-download"></i> Create & Download Backup
+                            </button>
+                        </div>
+                        
+                        <!-- Restore -->
+                        <div class="border dark:border-gray-700 rounded-lg p-4">
+                            <h4 class="font-bold text-gray-800 dark:text-white mb-3">Restore Data</h4>
+                            <p class="text-gray-600 dark:text-gray-400 mb-4">Restore your data from a previously created backup file.</p>
+                            <div class="space-y-3">
+                                <input type="file" id="restoreFile" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" accept=".json">
+                                <button onclick="restoreBackup()" class="w-full bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600">
+                                    <i class="bi bi-upload"></i> Restore from Backup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API URL
+        const API_BASE_URL = 'http://localhost:3000/api';
+
+        // API कॉल फंक्शन
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || 'API कॉल में त्रुटि');
+                }
+                
+                return result;
+            } catch (error) {
+                console.error('API कॉल त्रुटि:', error);
+                throw error;
+            }
+        }
+
+        // State management
+        let currentUser = null;
+        let users = [
+            { id: 'admin-default', username: 'admin', password: 'admin123', role: 'admin' }
+        ];
+        let products = [];
+        let jobs = [];
+        let payments = [];
+        
+        // System settings
+        let systemSettings = {
+            companyName: 'Job Management System',
+            currencySymbol: '₹',
+            itemsPerPage: 10,
+            sessionTimeout: 30,
+            requireStrongPasswords: false
+        };
+        
+        // Pagination and sorting state
+        let currentPage = {
+            jobs: 1,
+            payments: 1
+        };
+        let itemsPerPage = 10;
+        let currentSort = {
+            jobs: { field: 'date', direction: 'desc' },
+            payments: { field: 'date', direction: 'desc' }
+        };
+        
+        // Edit state
+        let editingItem = null;
+        
+        // Make edit/delete functions globally available
+        window.editJob = function(id) {
+            console.log("Edit job function called with ID:", id);
+            const job = jobs.find(j => j.id === id);
+            if (!job) {
+                console.error("Job not found with ID:", id);
+                return;
+            }
+            
+            console.log("Editing job:", job);
+            
+            // Set form values
+            document.getElementById('jobDate').value = job.date;
+            document.getElementById('clientName').value = job.clientName;
+            document.getElementById('vendorSelect').value = job.vendor;
+            document.getElementById('productSelect').value = job.product;
+            document.getElementById('quantity').value = job.quantity;
+            document.getElementById('description').value = job.description || '';
+            
+            // Change button text
+            document.querySelector('#jobForm button[type="submit"]').textContent = 'Update Job';
+            
+            // Set editing state
+            editingItem = id;
+            
+            // Scroll to form
+            document.getElementById('jobForm').scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        window.deleteJob = function(id) {
+            console.log("Delete job function called with ID:", id);
+            if (!confirm('Are you sure you want to delete this job?')) return;
+            
+            const index = jobs.findIndex(j => j.id === id);
+            if (index !== -1) {
+                jobs.splice(index, 1);
+                saveDataToLocalStorage();
+                refreshData();
+                alert('Job deleted successfully!');
+            } else {
+                console.error("Job not found with ID:", id);
+            }
+        };
+        
+        window.editPayment = function(id) {
+            console.log("Edit payment function called with ID:", id);
+            const payment = payments.find(p => p.id === id);
+            if (!payment) {
+                console.error("Payment not found with ID:", id);
+                return;
+            }
+            
+            console.log("Editing payment:", payment);
+            
+            // Set form values
+            document.getElementById('paymentDate').value = payment.date;
+            document.getElementById('paymentvendor').value = payment.vendor;
+            document.getElementById('paymentAmount').value = payment.amount;
+            
+            // Change button text
+            document.querySelector('#paymentForm button[type="submit"]').textContent = 'Update Payment';
+            
+            // Set editing state
+            editingItem = id;
+            
+            // Scroll to form
+            document.getElementById('paymentForm').scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        window.deletePayment = function(id) {
+            console.log("Delete payment function called with ID:", id);
+            if (!confirm('Are you sure you want to delete this payment?')) return;
+            
+            const index = payments.findIndex(p => p.id === id);
+            if (index !== -1) {
+                payments.splice(index, 1);
+                saveDataToLocalStorage();
+                refreshData();
+                alert('Payment deleted successfully!');
+            } else {
+                console.error("Payment not found with ID:", id);
+            }
+        };
+        
+        // Add product edit/delete functions
+        window.editProduct = function(name) {
+            console.log("Edit product function called with name:", name);
+            const product = products.find(p => p.name === name);
+            if (!product) {
+                console.error("Product not found with name:", name);
+                return;
+            }
+            
+            console.log("Editing product:", product);
+            
+            // Set form values
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productRate').value = product.rate;
+            
+            // Change button text
+            document.querySelector('#productForm button[type="submit"]').textContent = 'Update Product';
+            
+            // Set editing state - use product name as ID
+            editingItem = 'product-' + name;
+            
+            // Scroll to form
+            document.getElementById('productForm').scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        window.deleteProduct = function(name) {
+            console.log("Delete product function called with name:", name);
+            
+            // Check if product is used in any jobs
+            const isUsed = jobs.some(job => job.product === name);
+            if (isUsed) {
+                alert('Cannot delete this product as it is used in one or more jobs.');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to delete this product?')) return;
+            
+            const index = products.findIndex(p => p.name === name);
+            if (index !== -1) {
+                products.splice(index, 1);
+                saveDataToLocalStorage();
+                refreshData();
+                alert('Product deleted successfully!');
+            } else {
+                console.error("Product not found with name:", name);
+            }
+        };
+        
+        // Load data from localStorage
+        function loadDataFromLocalStorage() {
+            try {
+                console.log("Starting to load data from localStorage...");
+                
+                // Check if there's previous localStorage data
+                const hasLocalData = localStorage.getItem('jobAppUsers') || 
+                                     localStorage.getItem('jobAppProducts') || 
+                                     localStorage.getItem('jobAppJobs') || 
+                                     localStorage.getItem('jobAppPayments');
+                                     
+                console.log("Has local storage data:", Boolean(hasLocalData));
+                
+                // Load users
+                const savedUsers = localStorage.getItem('jobAppUsers');
+                if (savedUsers) {
+                    // Parse users array
+                    const parsedUsers = JSON.parse(savedUsers);
+                    
+                    // Ensure the admin user is always present
+                    const hasAdmin = parsedUsers.some(u => u.username === 'admin' && u.role === 'admin');
+                    
+                    if (!hasAdmin) {
+                        console.log("Admin user not found in saved data. Adding default admin.");
+                        parsedUsers.push({ id: 'admin-default', username: 'admin', password: 'admin123', role: 'admin' });
+                    }
+                    
+                    users = parsedUsers;
+                    console.log("Loaded users from localStorage:", users);
+                } else {
+                    console.log("No saved users found, using default admin");
+                }
+                
+                // Load products
+                const savedProducts = localStorage.getItem('jobAppProducts');
+                if (savedProducts) {
+                    products = JSON.parse(savedProducts);
+                    console.log("Loaded products from localStorage:", products.length);
+                } else {
+                    console.log("No saved products found");
+                }
+                
+                // Load jobs
+                const savedJobs = localStorage.getItem('jobAppJobs');
+                if (savedJobs) {
+                    jobs = JSON.parse(savedJobs);
+                    console.log("Loaded jobs from localStorage:", jobs.length);
+                } else {
+                    console.log("No saved jobs found");
+                }
+                
+                // Load payments
+                const savedPayments = localStorage.getItem('jobAppPayments');
+                if (savedPayments) {
+                    payments = JSON.parse(savedPayments);
+                    console.log("Loaded payments from localStorage:", payments.length);
+                } else {
+                    console.log("No saved payments found");
+                }
+                
+                // Load system settings
+                const savedSettings = localStorage.getItem('jobAppSettings');
+                if (savedSettings) {
+                    systemSettings = {...systemSettings, ...JSON.parse(savedSettings)};
+                    console.log("Loaded settings from localStorage:", systemSettings);
+                    
+                    // Apply settings
+                    itemsPerPage = systemSettings.itemsPerPage;
+                } else {
+                    console.log("No saved settings found, using defaults");
+                }
+                
+                console.log('Data loading completed');
+                
+                // If this is first time use, initialize with sample data
+                if (!hasLocalData) {
+                    console.log("First time use detected. Saving current data to localStorage.");
+                    saveDataToLocalStorage();
+                }
+            } catch (error) {
+                console.error('Error loading data from localStorage:', error);
+                alert('Error loading data. Using default data.');
+                
+                // Reset to defaults
+                users = [{ id: 'admin-default', username: 'admin', password: 'admin123', role: 'admin' }];
+                products = [];
+                jobs = [];
+                payments = [];
+                
+                // Save defaults
+                saveDataToLocalStorage();
+            }
+        }
+        
+        // Save data to localStorage
+        function saveDataToLocalStorage() {
+            try {
+                console.log("Saving data to localStorage...");
+                
+                localStorage.setItem('jobAppUsers', JSON.stringify(users));
+                localStorage.setItem('jobAppProducts', JSON.stringify(products));
+                localStorage.setItem('jobAppJobs', JSON.stringify(jobs));
+                localStorage.setItem('jobAppPayments', JSON.stringify(payments));
+                localStorage.setItem('jobAppSettings', JSON.stringify(systemSettings));
+                
+                console.log('Data saved to localStorage successfully');
+                return true;
+            } catch (error) {
+                console.error('Error saving data to localStorage:', error);
+                alert('Error saving data. Please check browser storage settings.');
+                return false;
+            }
+        }
+
+        // Theme management
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            const icon = themeToggle.querySelector('i');
+            icon.classList.toggle('bi-moon-fill');
+            icon.classList.toggle('bi-sun-fill');
+        });
+
+        // Loading management
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        // Login functionality
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            console.log("Login attempt:", username);
+            console.log("Current users:", users);
+            
+            // Form validation
+            let isValid = true;
+            
+            // Username validation
+            if (!username.trim()) {
+                showError('username', 'Username is required');
+                isValid = false;
+            } else {
+                clearError('username');
+            }
+            
+            // Password validation
+            if (!password.trim()) {
+                showError('password', 'Password is required');
+                isValid = false;
+            } else {
+                clearError('password');
+            }
+            
+            if (!isValid) return;
+
+            // Use localStorage for authentication instead of API
+            const user = users.find(u => u.username === username && u.password === password);
+            if (user) {
+                console.log("User logged in:", user);
+                
+                currentUser = user;
+                
+                // Save login state in sessionStorage
+                sessionStorage.setItem('jobAppCurrentUser', JSON.stringify({
+                    id: user.id,
+                    username: user.username,
+                    role: user.role
+                }));
+                
+                activateUserSession(user);
+            } else {
+                console.log("Invalid login attempt");
+                alert('Invalid credentials!');
+            }
+        });
+
+        // Activate user session
+        function activateUserSession(user) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            
+            // Show username without role for vendors, with role for others
+            if (user.role === 'vendor') {
+                document.getElementById('userDisplay').textContent = user.username;
+            } else {
+                document.getElementById('userDisplay').textContent = `${user.username} (${user.role})`;
+            }
+            
+            // Show/hide admin controls
+            if (user.role === 'admin' || user.role === 'subadmin') {
+                console.log("Showing admin controls for role:", user.role);
+                
+                // For debugging - show admin panel status
+                const adminPanelStatus = document.getElementById('adminPanelStatus');
+                adminPanelStatus.classList.remove('hidden');
+                document.getElementById('adminRoleDisplay').textContent = user.role;
+                
+                // Show admin controls and navigation
+                document.getElementById('adminControls').classList.remove('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                document.getElementById('adminNavigation').classList.remove('hidden');
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+                
+                // Make sure dashboard page is active by default
+                document.querySelectorAll('.page-section').forEach(page => {
+                    page.classList.remove('active');
+                });
+                document.getElementById('dashboard-page').classList.add('active');
+                
+                // Initialize navigation
+                setTimeout(initNavigation, 100); // Small delay to ensure DOM is ready
+            } else {
+                console.log("Hiding admin controls for role:", user.role);
+                document.getElementById('adminPanelStatus').classList.add('hidden');
+                document.getElementById('adminControls').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.add('hidden');
+                document.getElementById('adminNavigation').classList.add('hidden');
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+                
+                // For vendors, show only job listings and payments
+                document.querySelectorAll('.page-section').forEach(page => {
+                    page.classList.remove('active');
+                });
+                document.getElementById('job-listings-page').classList.add('active');
+            }
+            
+            // Manage vendor-specific view
+            if (user.role === 'vendor') {
+                console.log("Setting up vendor view for:", user.username);
+                
+                // IMPORTANT: Hide Job Management section completely
+                // Find all sections and hide the one with "Job Management" title
+                const allSections = document.querySelectorAll('.bg-white.dark\\:bg-gray-800.p-6.rounded-lg.shadow.mb-8');
+                allSections.forEach(section => {
+                    const title = section.querySelector('h3');
+                    if (title && title.textContent.includes('Job Management')) {
+                        section.classList.add('hidden');
+                        console.log("Job Management section hidden successfully");
+                    }
+                });
+                
+                // Modify Job Listings table headers for vendor view
+                const jobListingsTable = document.querySelector('#jobsList').closest('table');
+                const jobHeaders = jobListingsTable.querySelectorAll('thead th');
+                
+                // Hide vendor column and actions column and client column
+                if (jobHeaders.length >= 8) {
+                    // Find and hide Client column
+                    for (let i = 0; i < jobHeaders.length; i++) {
+                        if (jobHeaders[i].textContent.trim() === 'Client') {
+                            jobHeaders[i].classList.add('hidden');
+                            console.log("Client column hidden");
+                            break;
+                        }
+                    }
+                    
+                    // Hide Actions column (last column)
+                    jobHeaders[jobHeaders.length - 1].classList.add('hidden');
+                    console.log("Actions column hidden");
+                }
+                
+                // Modify Payment Listings table headers for vendor view
+                const paymentListingsTable = document.querySelector('#paymentsList').closest('table');
+                const paymentHeaders = paymentListingsTable.querySelectorAll('thead th');
+                
+                // Hide actions column
+                if (paymentHeaders.length >= 3) {
+                    // Hide Actions column (last column)
+                    paymentHeaders[paymentHeaders.length - 1].classList.add('hidden');
+                    console.log("Payment actions column hidden");
+                }
+                
+                console.log("Vendor view setup complete");
+            }
+            
+            refreshData();
+        }
+
+        function logout() {
+            currentUser = null;
+            // Clear login state from sessionStorage instead of localStorage
+            sessionStorage.removeItem('jobAppCurrentUser');
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('loginForm').reset();
+        }
+
+        // User management
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Check if currentUser is admin
+            if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'subadmin')) {
+                console.error("Unauthorized attempt to add user");
+                alert('You do not have permission to add users');
+                return;
+            }
+            
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const role = document.getElementById('userRole').value;
+            
+            console.log("User form submitted:", { username, role, editing: Boolean(editingItem) });
+            
+            // Form validation
+            let isValid = true;
+            let errorMessages = [];
+            
+            // Username validation
+            if (!username.trim()) {
+                showError('newUsername', 'Username is required');
+                errorMessages.push('Username is required');
+                isValid = false;
+            } else if (username.length < 3) {
+                showError('newUsername', 'Username must be at least 3 characters');
+                errorMessages.push('Username must be at least 3 characters');
+                isValid = false;
+            } else if (!editingItem && users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                showError('newUsername', 'Username already exists');
+                errorMessages.push('Username already exists');
+                isValid = false;
+            } else {
+                clearError('newUsername');
+            }
+            
+            // Password validation
+            if (!password.trim()) {
+                showError('newPassword', 'Password is required');
+                errorMessages.push('Password is required');
+                isValid = false;
+            } else if (password.length < 6) {
+                showError('newPassword', 'Password must be at least 6 characters');
+                errorMessages.push('Password must be at least 6 characters');
+                isValid = false;
+            } else {
+                clearError('newPassword');
+            }
+            
+            // Role validation
+            if (!role) {
+                showError('userRole', 'Role selection is required');
+                errorMessages.push('Role selection is required');
+                isValid = false;
+            } else {
+                clearError('userRole');
+            }
+            
+            // Admin restriction - only admin can create subadmin
+            if (role === 'subadmin' && currentUser.role !== 'admin') {
+                showError('userRole', 'Only admin can create sub-admin users');
+                errorMessages.push('Only admin can create sub-admin users');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                console.log("Form validation failed:", errorMessages);
+                document.getElementById('userFormErrors').innerHTML = errorMessages.map(err => `<div>${err}</div>`).join('');
+                return;
+            }
+            
+            document.getElementById('userFormErrors').innerHTML = '';
+
+            try {
+                if (editingItem) {
+                    // Update existing user
+                    const userIndex = users.findIndex(u => u.id === editingItem);
+                    if (userIndex !== -1) {
+                        users[userIndex] = {
+                            ...users[userIndex],
+                            username,
+                            password,
+                            role
+                        };
+                        
+                        saveDataToLocalStorage();
+                        alert('User updated successfully!');
+                        editingItem = null;
+                        document.querySelector('#userForm button[type="submit"]').textContent = 'Add User';
+                    }
+                } else {
+                    // Add new user
+                    const newUser = {
+                        id: Date.now().toString(),
+                        username,
+                        password,
+                        role
+                    };
+                    
+                    users.push(newUser);
+                    alert('User added successfully!');
+                }
+                
+                document.getElementById('userForm').reset();
+                refreshUsersList();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+
+        // Product management
+        document.getElementById('productForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('productName').value;
+            const rate = document.getElementById('productRate').value;
+            
+            // Form validation
+            let isValid = true;
+            
+            // Product name validation
+            if (!name.trim()) {
+                showError('productName', 'Product name is required');
+                isValid = false;
+            } else if (!editingItem && products.some(p => p.name === name)) {
+                showError('productName', 'Product already exists');
+                isValid = false;
+            } else {
+                clearError('productName');
+            }
+            
+            // Rate validation
+            if (!rate) {
+                showError('productRate', 'Rate is required');
+                isValid = false;
+            } else if (isNaN(parseFloat(rate)) || parseFloat(rate) <= 0) {
+                showError('productRate', 'Rate must be a positive number');
+                isValid = false;
+            } else {
+                clearError('productRate');
+            }
+            
+            if (!isValid) return;
+
+            // Check if editing or adding new
+            if (editingItem && editingItem.startsWith('product-')) {
+                // Get the original product name
+                const originalName = editingItem.replace('product-', '');
+                
+                // Find the product index
+                const index = products.findIndex(p => p.name === originalName);
+                
+                if (index !== -1) {
+                    // If name is changed, update all jobs using this product
+                    if (originalName !== name) {
+                        jobs.forEach(job => {
+                            if (job.product === originalName) {
+                                job.product = name;
+                                job.rate = parseFloat(rate);
+                                job.total = job.quantity * parseFloat(rate);
+                            }
+                        });
+                    }
+                    
+                    // Update product
+                    products[index] = {
+                        name,
+                        rate: parseFloat(rate)
+                    };
+                    
+                    alert('Product updated successfully!');
+                }
+                
+                // Reset editing state
+                editingItem = null;
+                document.querySelector('#productForm button[type="submit"]').textContent = 'Add Product';
+            } else {
+                // Add new product
+                const newProduct = {
+                    name,
+                    rate: parseFloat(rate)
+                };
+                
+                products.push(newProduct);
+                alert('Product added successfully!');
+            }
+            
+            saveDataToLocalStorage();
+            document.getElementById('productForm').reset();
+            refreshData();
+        });
+
+        // Job management
+        document.getElementById('jobForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const date = document.getElementById('jobDate').value;
+            const clientName = document.getElementById('clientName').value;
+            const vendor = document.getElementById('vendorSelect').value;
+            const product = document.getElementById('productSelect').value;
+            const quantity = document.getElementById('quantity').value;
+            const description = document.getElementById('description').value;
+            
+            // Form validation
+            let isValid = true;
+            
+            // Date validation
+            if (!date) {
+                showError('jobDate', 'Date is required');
+                isValid = false;
+            } else {
+                clearError('jobDate');
+            }
+            
+            // Client name validation
+            if (!clientName.trim()) {
+                showError('clientName', 'Client name is required');
+                isValid = false;
+            } else {
+                clearError('clientName');
+            }
+            
+            // Vendor validation
+            if (!vendor) {
+                showError('vendorSelect', 'Vendor selection is required');
+                isValid = false;
+            } else {
+                clearError('vendorSelect');
+            }
+            
+            // Product validation
+            if (!product) {
+                showError('productSelect', 'Product selection is required');
+                isValid = false;
+            } else {
+                clearError('productSelect');
+            }
+            
+            // Quantity validation
+            if (!quantity) {
+                showError('quantity', 'Quantity is required');
+                isValid = false;
+            } else if (isNaN(parseFloat(quantity)) || parseFloat(quantity) <= 0) {
+                showError('quantity', 'Quantity must be a positive number');
+                isValid = false;
+            } else {
+                clearError('quantity');
+            }
+            
+            if (!isValid) return;
+
+            // Use localStorage instead of API
+            const productRate = products.find(p => p.name === product)?.rate || 0;
+            const total = parseFloat(quantity) * productRate;
+            
+            const jobData = {
+                id: Date.now().toString(), // Generate a unique ID
+                date,
+                clientName,
+                vendor,
+                product,
+                quantity: parseFloat(quantity),
+                description,
+                rate: productRate,
+                total: total
+            };
+            
+            jobs.push(jobData);
+            saveDataToLocalStorage();
+            alert('जॉब सफलतापूर्वक जोड़ा गया!');
+            document.getElementById('jobForm').reset();
+            refreshData();
+        });
+
+        // Payment management
+        document.getElementById('paymentForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const date = document.getElementById('paymentDate').value;
+            const vendor = document.getElementById('paymentvendor').value;
+            const amount = document.getElementById('paymentAmount').value;
+            
+            // Form validation
+            let isValid = true;
+            
+            // Date validation
+            if (!date) {
+                showError('paymentDate', 'Date is required');
+                isValid = false;
+            } else {
+                clearError('paymentDate');
+            }
+            
+            // Vendor validation
+            if (!vendor) {
+                showError('paymentvendor', 'Vendor selection is required');
+                isValid = false;
+            } else {
+                clearError('paymentvendor');
+            }
+            
+            // Amount validation
+            if (!amount) {
+                showError('paymentAmount', 'Amount is required');
+                isValid = false;
+            } else if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+                showError('paymentAmount', 'Amount must be a positive number');
+                isValid = false;
+            } else {
+                clearError('paymentAmount');
+            }
+            
+            if (!isValid) return;
+
+            // Use localStorage instead of API
+            const paymentData = {
+                id: Date.now().toString(), // Generate a unique ID
+                date,
+                vendor,
+                amount: parseFloat(amount)
+            };
+            
+            payments.push(paymentData);
+            saveDataToLocalStorage();
+            alert('पेमेंट सफलतापूर्वक जोड़ा गया!');
+            document.getElementById('paymentForm').reset();
+            refreshData();
+        });
+        
+        // Utility functions for form validation
+        function showError(inputId, message) {
+            const input = document.getElementById(inputId);
+            input.classList.add('input-error');
+            
+            // Remove any existing error message
+            const existingError = input.parentElement.querySelector('.error-message');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            // Create error message element
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            errorElement.textContent = message;
+            
+            // Insert error message after input
+            input.parentElement.insertBefore(errorElement, input.nextSibling);
+        }
+        
+        function clearError(inputId) {
+            const input = document.getElementById(inputId);
+            input.classList.remove('input-error');
+            
+            // Remove any existing error message
+            const existingError = input.parentElement.querySelector('.error-message');
+            if (existingError) {
+                existingError.remove();
+            }
+        }
+
+        // Data refresh
+        function refreshData() {
+            refreshDropdowns();
+            refreshJobsList();
+            refreshPaymentsList();
+            refreshMonthlySummary();
+            refreshUsersList();
+            refreshProductsList();
+            
+            // Refresh admin dashboard if visible
+            if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'subadmin')) {
+                refreshAdminDashboard();
+            }
+        }
+
+        function refreshDropdowns() {
+            // vendors dropdown
+            const vendorSelect = document.getElementById('vendorSelect');
+            const paymentvendor = document.getElementById('paymentvendor');
+            vendorSelect.innerHTML = '<option value="">Select vendor</option>';
+            paymentvendor.innerHTML = '<option value="">Select vendor</option>';
+            
+            // Also update the report vendor dropdown
+            const reportVendor = document.getElementById('reportVendor');
+            if (reportVendor) {
+                reportVendor.innerHTML = '<option value="">All Vendors</option>';
+            }
+            
+            users.filter(u => u.role === 'vendor').forEach(vendor => {
+                const option = `<option value="${vendor.username}">${vendor.username}</option>`;
+                vendorSelect.insertAdjacentHTML('beforeend', option);
+                paymentvendor.insertAdjacentHTML('beforeend', option);
+                
+                // Add to report vendor dropdown if it exists
+                if (reportVendor) {
+                    reportVendor.insertAdjacentHTML('beforeend', option);
+                }
+            });
+
+            // Products dropdown
+            const productSelect = document.getElementById('productSelect');
+            productSelect.innerHTML = '<option value="">Select Product</option>';
+            products.forEach(product => {
+                productSelect.insertAdjacentHTML('beforeend', 
+                    `<option value="${product.name}">${product.name} (₹${product.rate})</option>`
+                );
+            });
+        }
+
+        function refreshJobsList() {
+            const jobsList = document.getElementById('jobsList');
+            const monthFilter = document.getElementById('monthFilter').value;
+            
+            let filteredJobs = jobs;
+            
+            // Filter jobs for vendors - only show their own jobs
+            if (currentUser && currentUser.role === 'vendor') {
+                console.log("Filtering jobs for vendor:", currentUser.username);
+                filteredJobs = jobs.filter(job => job.vendor === currentUser.username);
+                console.log("Filtered jobs count:", filteredJobs.length);
+            }
+            
+            if (monthFilter) {
+                filteredJobs = filteredJobs.filter(job => job.date.startsWith(monthFilter));
+            }
+            
+            // Sorting
+            filteredJobs = [...filteredJobs].sort((a, b) => {
+                const sort = currentSort.jobs;
+                const aValue = a[sort.field];
+                const bValue = b[sort.field];
+                
+                if (sort.direction === 'asc') {
+                    return aValue > bValue ? 1 : -1;
+                } else {
+                    return aValue < bValue ? 1 : -1;
+                }
+            });
+            
+            // Pagination
+            const totalPages = Math.ceil(filteredJobs.length / itemsPerPage);
+            if (currentPage.jobs > totalPages) {
+                currentPage.jobs = totalPages || 1;
+            }
+            
+            const start = (currentPage.jobs - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedJobs = filteredJobs.slice(start, end);
+            
+            // Create pagination controls
+            createPagination('jobsPagination', totalPages, currentPage.jobs, 'jobs');
+
+            jobsList.innerHTML = '';
+            
+            if (paginatedJobs.length === 0) {
+                const colSpan = currentUser.role === 'vendor' ? 6 : 8;
+                jobsList.innerHTML = `<tr><td colspan="${colSpan}" class="px-4 py-2 text-center text-gray-800 dark:text-gray-300">No jobs found</td></tr>`;
+                return;
+            }
+            
+            paginatedJobs.forEach(job => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-t dark:border-gray-700';
+                
+                // Build cell contents
+                const dateCell = `<td class="px-4 py-2 text-gray-800 dark:text-gray-300">${formatDate(job.date)}</td>`;
+                const clientCell = `<td class="px-4 py-2 text-gray-800 dark:text-gray-300 ${currentUser.role === 'vendor' ? 'hidden' : ''}">${job.clientName}</td>`;
+                const productCell = `<td class="px-4 py-2 text-gray-800 dark:text-gray-300">${job.product}</td>`;
+                const descriptionCell = `<td class="px-4 py-2 text-gray-800 dark:text-gray-300">${job.description || ''}</td>`;
+                const quantityCell = `<td class="px-4 py-2 text-gray-800 dark:text-gray-300">${job.quantity}</td>`;
+                const rateCell = `<td class="px-4 py-2 text-gray-800 dark:text-gray-300">${formatCurrency(job.rate)}</td>`;
+                const totalCell = `<td class="px-4 py-2 text-gray-800 dark:text-gray-300">${formatCurrency(job.total)}</td>`;
+                
+                // Actions cell with direct event handlers
+                const actionsCell = document.createElement('td');
+                actionsCell.className = `px-4 py-2 text-gray-800 dark:text-gray-300 ${currentUser.role === 'vendor' ? 'hidden' : ''}`;
+                
+                // Only show edit/delete buttons for admin and subadmin
+                if (currentUser.role === 'admin' || currentUser.role === 'subadmin') {
+                    const editButton = document.createElement('button');
+                    editButton.className = 'text-blue-500 hover:text-blue-700 mr-2';
+                    editButton.innerHTML = '<i class="bi bi-pencil"></i>';
+                    editButton.onclick = function() { window.editJob(job.id); };
+                    
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'text-red-500 hover:text-red-700';
+                    deleteButton.innerHTML = '<i class="bi bi-trash"></i>';
+                    deleteButton.onclick = function() { window.deleteJob(job.id); };
+                    
+                    actionsCell.appendChild(editButton);
+                    actionsCell.appendChild(deleteButton);
+                }
+                
+                // Combine all cells
+                tr.innerHTML = dateCell + (currentUser.role === 'vendor' ? '' : clientCell) + 
+                               productCell + descriptionCell + quantityCell + rateCell + totalCell;
+                tr.appendChild(actionsCell);
+                
+                jobsList.appendChild(tr);
+            });
+        }
+
+        function refreshPaymentsList() {
+            const paymentsList = document.getElementById('paymentsList');
+            let filteredPayments = payments;
+            
+            // Filter payments for vendors - only show their own payments
+            if (currentUser && currentUser.role === 'vendor') {
+                console.log("Filtering payments for vendor:", currentUser.username);
+                filteredPayments = payments.filter(payment => payment.vendor === currentUser.username);
+                console.log("Filtered payments count:", filteredPayments.length);
+            }
+            
+            // Sorting
+            filteredPayments = [...filteredPayments].sort((a, b) => {
+                const sort = currentSort.payments;
+                const aValue = a[sort.field];
+                const bValue = b[sort.field];
+                
+                if (sort.direction === 'asc') {
+                    return aValue > bValue ? 1 : -1;
+                } else {
+                    return aValue < bValue ? 1 : -1;
+                }
+            });
+            
+            // Pagination
+            const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+            if (currentPage.payments > totalPages) {
+                currentPage.payments = totalPages || 1;
+            }
+            
+            const start = (currentPage.payments - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedPayments = filteredPayments.slice(start, end);
+            
+            // Create pagination controls
+            createPagination('paymentsPagination', totalPages, currentPage.payments, 'payments');
+
+            paymentsList.innerHTML = '';
+            
+            if (paginatedPayments.length === 0) {
+                const colSpan = currentUser.role === 'vendor' ? 2 : 4;
+                paymentsList.innerHTML = `<tr><td colspan="${colSpan}" class="px-4 py-2 text-center text-gray-800 dark:text-gray-300">No payments found</td></tr>`;
+                return;
+            }
+            
+            paginatedPayments.forEach(payment => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-t dark:border-gray-700';
+                
+                // Build cell contents
+                const dateCell = `<td class="px-4 py-2 text-gray-800 dark:text-gray-300">${formatDate(payment.date)}</td>`;
+                const vendorCell = `<td class="px-4 py-2 text-gray-800 dark:text-gray-300 ${currentUser.role === 'vendor' ? 'hidden' : ''}">${payment.vendor}</td>`;
+                const amountCell = `<td class="px-4 py-2 text-gray-800 dark:text-gray-300">${formatCurrency(payment.amount)}</td>`;
+                
+                // Actions cell with direct event handlers
+                const actionsCell = document.createElement('td');
+                actionsCell.className = `px-4 py-2 text-gray-800 dark:text-gray-300 ${currentUser.role === 'vendor' ? 'hidden' : ''}`;
+                
+                // Only show edit/delete buttons for admin and subadmin
+                if (currentUser.role === 'admin' || currentUser.role === 'subadmin') {
+                    const editButton = document.createElement('button');
+                    editButton.className = 'text-blue-500 hover:text-blue-700 mr-2';
+                    editButton.innerHTML = '<i class="bi bi-pencil"></i>';
+                    editButton.onclick = function() { window.editPayment(payment.id); };
+                    
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'text-red-500 hover:text-red-700';
+                    deleteButton.innerHTML = '<i class="bi bi-trash"></i>';
+                    deleteButton.onclick = function() { window.deletePayment(payment.id); };
+                    
+                    actionsCell.appendChild(editButton);
+                    actionsCell.appendChild(deleteButton);
+                } else {
+                    // For vendors, this cell is hidden
+                }
+                
+                // Combine all cells
+                tr.innerHTML = dateCell + vendorCell + amountCell;
+                tr.appendChild(actionsCell);
+                
+                paymentsList.appendChild(tr);
+            });
+        }
+
+        function refreshMonthlySummary() {
+            const monthFilter = document.getElementById('monthFilter').value;
+            let filteredJobs = jobs;
+            let filteredPayments = payments;
+
+            // वेंडर्स के लिए फिल्टरिंग
+            if (currentUser && currentUser.role === 'vendor') {
+                console.log("Filtering monthly summary for vendor:", currentUser.username);
+                filteredJobs = jobs.filter(job => job.vendor === currentUser.username);
+                filteredPayments = payments.filter(payment => payment.vendor === currentUser.username);
+                
+                // Monthly Summary सेक्शन के टाइटल को वेंडर्स के लिए अपडेट करें
+                document.querySelector('.bg-white.dark\\:bg-gray-800.p-6.rounded-lg.shadow:last-of-type h3').textContent = 
+                    `Monthly Summary - ${currentUser.username}`;
+                
+                console.log("Vendor jobs count:", filteredJobs.length);
+                console.log("Vendor payments count:", filteredPayments.length);
+            }
+
+            if (monthFilter) {
+                filteredJobs = filteredJobs.filter(job => job.date.startsWith(monthFilter));
+                filteredPayments = filteredPayments.filter(payment => payment.date.startsWith(monthFilter));
+            }
+
+            // Calculate totals with detailed logging
+            let totalEarnings = 0;
+            filteredJobs.forEach(job => {
+                totalEarnings += job.total;
+                console.log(`Job: ${job.id}, Total: ${job.total}, Running sum: ${totalEarnings}`);
+            });
+            
+            let totalPayments = 0;
+            filteredPayments.forEach(payment => {
+                totalPayments += payment.amount;
+                console.log(`Payment: ${payment.id}, Amount: ${payment.amount}, Running sum: ${totalPayments}`);
+            });
+            
+            const balance = totalEarnings - totalPayments;
+            
+            console.log("Final totals - Earnings:", totalEarnings, "Payments:", totalPayments, "Balance:", balance);
+
+            document.getElementById('totalEarnings').textContent = formatCurrency(totalEarnings);
+            document.getElementById('totalPayments').textContent = formatCurrency(totalPayments);
+            document.getElementById('balance').textContent = formatCurrency(balance);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-GB');
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            // Round to 2 decimal places and fix any floating point precision issues
+            const roundedAmount = Math.round(amount * 100) / 100;
+            
+            // If it's a whole number, don't show decimals
+            if (roundedAmount === Math.floor(roundedAmount)) {
+                return systemSettings.currencySymbol + roundedAmount.toFixed(0);
+            }
+            
+            // Otherwise show up to 2 decimal places
+            return systemSettings.currencySymbol + roundedAmount.toFixed(2);
+        }
+
+        // Pagination function
+        function createPagination(containerId, totalPages, currentPageNum, type) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (totalPages <= 1) return;
+            
+            // Previous button
+            const prevBtn = document.createElement('button');
+            prevBtn.className = `pagination-btn ${currentPageNum === 1 ? 'opacity-50 cursor-not-allowed' : ''}`;
+            prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+            prevBtn.disabled = currentPageNum === 1;
+            prevBtn.addEventListener('click', () => {
+                if (currentPageNum > 1) {
+                    currentPage[type] = currentPageNum - 1;
+                    type === 'jobs' ? refreshJobsList() : refreshPaymentsList();
+                }
+            });
+            container.appendChild(prevBtn);
+            
+            // Page buttons
+            const maxButtons = 5;
+            const startPage = Math.max(1, currentPageNum - Math.floor(maxButtons / 2));
+            const endPage = Math.min(totalPages, startPage + maxButtons - 1);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `pagination-btn ${i === currentPageNum ? 'active' : ''}`;
+                pageBtn.textContent = i;
+                pageBtn.addEventListener('click', () => {
+                    currentPage[type] = i;
+                    type === 'jobs' ? refreshJobsList() : refreshPaymentsList();
+                });
+                container.appendChild(pageBtn);
+            }
+            
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.className = `pagination-btn ${currentPageNum === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`;
+            nextBtn.disabled = currentPageNum === totalPages;
+            nextBtn.addEventListener('click', () => {
+                if (currentPageNum < totalPages) {
+                    currentPage[type] = currentPageNum + 1;
+                    type === 'jobs' ? refreshJobsList() : refreshPaymentsList();
+                }
+            });
+            container.appendChild(nextBtn);
+        }
+        
+        // Add sort handler to table headers
+        function initSortableHeaders() {
+            // Jobs table headers
+            document.querySelectorAll('#jobsList').forEach(table => {
+                const headers = table.closest('table').querySelectorAll('th');
+                headers.forEach((header, index) => {
+                    // Skip the actions column
+                    if (index === headers.length - 1) return;
+                    
+                    const field = getFieldNameByIndex('jobs', index);
+                    if (!field) return;
+                    
+                    header.classList.add('sortable');
+                    if (currentSort.jobs.field === field) {
+                        header.classList.add(currentSort.jobs.direction);
+                    }
+                    
+                    header.addEventListener('click', () => {
+                        if (currentSort.jobs.field === field) {
+                            currentSort.jobs.direction = currentSort.jobs.direction === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            currentSort.jobs.field = field;
+                            currentSort.jobs.direction = 'asc';
+                        }
+                        refreshJobsList();
+                    });
+                });
+            });
+            
+            // Payments table headers
+            document.querySelectorAll('#paymentsList').forEach(table => {
+                const headers = table.closest('table').querySelectorAll('th');
+                headers.forEach((header, index) => {
+                    // Skip the actions column
+                    if (index === headers.length - 1) return;
+                    
+                    const field = getFieldNameByIndex('payments', index);
+                    if (!field) return;
+                    
+                    header.classList.add('sortable');
+                    if (currentSort.payments.field === field) {
+                        header.classList.add(currentSort.payments.direction);
+                    }
+                    
+                    header.addEventListener('click', () => {
+                        if (currentSort.payments.field === field) {
+                            currentSort.payments.direction = currentSort.payments.direction === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            currentSort.payments.field = field;
+                            currentSort.payments.direction = 'asc';
+                        }
+                        refreshPaymentsList();
+                    });
+                });
+            });
+        }
+        
+        // Helper to get field name from column index
+        function getFieldNameByIndex(type, index) {
+            if (type === 'jobs') {
+                const fields = ['date', 'vendor', 'clientName', 'product', 'description', 'quantity', 'rate', 'total'];
+                return fields[index];
+            } else if (type === 'payments') {
+                const fields = ['date', 'vendor', 'amount'];
+                return fields[index];
+            }
+            return null;
+        }
+
+        // Event listeners
+        document.getElementById('monthFilter').addEventListener('change', refreshData);
+
+        // Initialize navigation
+        function initNavigation() {
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Get the page to show
+                    const pageId = this.getAttribute('data-page');
+                    console.log("Switching to page:", pageId);
+                    
+                    // Remove active class from all links and add to clicked link
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Hide all pages
+                    document.querySelectorAll('.page-section').forEach(page => {
+                        page.classList.remove('active');
+                    });
+                    
+                    // Show the selected page
+                    const pageToShow = document.getElementById(pageId + '-page');
+                    if (pageToShow) {
+                        pageToShow.classList.add('active');
+                        console.log("Page shown:", pageId + '-page');
+                    } else {
+                        console.error("Page not found:", pageId + '-page');
+                    }
+                });
+            });
+            
+            // Initialize navigation on page load
+            console.log("Navigation initialized");
+        }
+
+        // Initial setup
+        document.getElementById('monthFilter').valueAsDate = new Date();
+        
+        // Load data on startup
+        loadDataFromLocalStorage();
+        
+        // Check if user is already logged in
+        const savedUserData = sessionStorage.getItem('jobAppCurrentUser');
+        if (savedUserData) {
+            try {
+                const savedUser = JSON.parse(savedUserData);
+                console.log("Found saved user session:", savedUser);
+                
+                // Find the full user data including password
+                const userWithPassword = users.find(u => u.id === savedUser.id && u.username === savedUser.username);
+                
+                if (userWithPassword) {
+                    currentUser = userWithPassword;
+                    console.log("Restoring user session for:", currentUser.username);
+                    activateUserSession(currentUser);
+                } else {
+                    console.log("Saved user not found in current data, clearing session");
+                    sessionStorage.removeItem('jobAppCurrentUser');
+                }
+            } catch (error) {
+                console.error("Error restoring user session:", error);
+                sessionStorage.removeItem('jobAppCurrentUser');
+            }
+        }
+        
+        // Initialize sortable headers after DOM is fully loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            initSortableHeaders();
+            refreshUsersList();
+            refreshProductsList();
+            loadSettingsIntoForm();
+            
+            // Initialize navigation if admin is logged in
+            if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'subadmin')) {
+                initNavigation();
+            }
+        });
+
+        // Function to refresh users list
+        function refreshUsersList() {
+            const usersList = document.getElementById('usersList');
+            if (!usersList) return;
+            
+            console.log("Refreshing users list with users:", users);
+            
+            usersList.innerHTML = '';
+            
+            if (users.length === 0) {
+                usersList.innerHTML = '<tr><td colspan="2" class="px-4 py-2 text-center text-gray-800 dark:text-gray-300">No users found</td></tr>';
+                return;
+            }
+            
+            users.forEach(user => {
+                // Skip showing the current user for security
+                if (currentUser && user.username === currentUser.username) return;
+                
+                const tr = document.createElement('tr');
+                tr.className = 'border-t dark:border-gray-700';
+                
+                const usernameCell = document.createElement('td');
+                usernameCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
+                usernameCell.textContent = user.username;
+                
+                const roleCell = document.createElement('td');
+                roleCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
+                roleCell.textContent = user.role;
+                
+                // Add actions cell with edit and delete buttons for admin only
+                const actionsCell = document.createElement('td');
+                actionsCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
+                
+                // Only admin can edit/delete users
+                if (currentUser && currentUser.role === 'admin') {
+                    // Don't allow editing/deleting the default admin
+                    if (user.username !== 'admin') {
+                        const editButton = document.createElement('button');
+                        editButton.className = 'text-blue-500 hover:text-blue-700 mr-2';
+                        editButton.innerHTML = '<i class="bi bi-pencil"></i>';
+                        editButton.onclick = function() { editUser(user.id); };
+                        
+                        const deleteButton = document.createElement('button');
+                        deleteButton.className = 'text-red-500 hover:text-red-700';
+                        deleteButton.innerHTML = '<i class="bi bi-trash"></i>';
+                        deleteButton.onclick = function() { deleteUser(user.id); };
+                        
+                        actionsCell.appendChild(editButton);
+                        actionsCell.appendChild(deleteButton);
+                    }
+                }
+                
+                tr.appendChild(usernameCell);
+                tr.appendChild(roleCell);
+                tr.appendChild(actionsCell);
+                
+                usersList.appendChild(tr);
+            });
+        }
+
+        // Add edit and delete user functions
+        window.editUser = function(id) {
+            console.log("Edit user function called with ID:", id);
+            const user = users.find(u => u.id === id);
+            if (!user) {
+                console.error("User not found with ID:", id);
+                return;
+            }
+            
+            console.log("Editing user:", user);
+            
+            // Set form values
+            document.getElementById('newUsername').value = user.username;
+            document.getElementById('newPassword').value = user.password;
+            document.getElementById('userRole').value = user.role;
+            
+            // Change button text
+            document.querySelector('#userForm button[type="submit"]').textContent = 'Update User';
+            
+            // Set editing state
+            editingItem = id;
+            
+            // Scroll to form
+            document.getElementById('userForm').scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        window.deleteUser = function(id) {
+            console.log("Delete user function called with ID:", id);
+            if (!confirm('Are you sure you want to delete this user?')) return;
+            
+            // Don't allow deleting the default admin
+            const user = users.find(u => u.id === id);
+            if (user && user.username === 'admin') {
+                alert('Cannot delete the default admin user');
+                return;
+            }
+            
+            const index = users.findIndex(u => u.id === id);
+            if (index !== -1) {
+                users.splice(index, 1);
+                saveDataToLocalStorage();
+                refreshUsersList();
+                alert('User deleted successfully!');
+            } else {
+                console.error("User not found with ID:", id);
+            }
+        };
+
+        // Function to refresh admin dashboard
+        function refreshAdminDashboard() {
+            console.log("Refreshing admin dashboard");
+            
+            // Update total counts
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('totalProducts').textContent = products.length;
+            document.getElementById('totalJobs').textContent = jobs.length;
+            document.getElementById('dashboardTotalPayments').textContent = payments.length;
+            
+            // Generate top vendors chart
+            generateTopVendorsChart();
+        }
+        
+        // Function to generate top vendors chart
+        function generateTopVendorsChart() {
+            const chartContainer = document.getElementById('topVendorsChart');
+            chartContainer.innerHTML = '';
+            
+            // Count jobs by vendor
+            const vendorJobCounts = {};
+            jobs.forEach(job => {
+                if (!vendorJobCounts[job.vendor]) {
+                    vendorJobCounts[job.vendor] = 0;
+                }
+                vendorJobCounts[job.vendor]++;
+            });
+            
+            // Convert to array and sort
+            const vendorData = Object.entries(vendorJobCounts)
+                .map(([vendor, count]) => ({ vendor, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5); // Top 5 vendors
+            
+            if (vendorData.length === 0) {
+                chartContainer.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">No vendor data available</p>';
+                return;
+            }
+            
+            // Find max count for scaling
+            const maxCount = Math.max(...vendorData.map(d => d.count));
+            
+            // Create chart
+            const chartHtml = vendorData.map(data => {
+                const percentage = (data.count / maxCount) * 100;
+                return `
+                    <div class="mb-2">
+                        <div class="flex items-center">
+                            <span class="w-24 text-sm text-gray-700 dark:text-gray-300">${data.vendor}</span>
+                            <div class="flex-1 h-6 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                                <div class="h-full bg-blue-500 rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">${data.count}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            chartContainer.innerHTML = chartHtml;
+        }
+
+        // Report generation functions
+        window.generateDateRangeReport = function() {
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+            
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+            
+            // Filter jobs by date range
+            const filteredJobs = jobs.filter(job => {
+                return job.date >= startDate && job.date <= endDate;
+            });
+            
+            // Filter payments by date range
+            const filteredPayments = payments.filter(payment => {
+                return payment.date >= startDate && payment.date <= endDate;
+            });
+            
+            // Generate report
+            generateReport({
+                title: `Date Range Report (${formatDate(startDate)} - ${formatDate(endDate)})`,
+                jobs: filteredJobs,
+                payments: filteredPayments,
+                startDate,
+                endDate
+            });
+        };
+        
+        window.generateVendorReport = function() {
+            const vendor = document.getElementById('reportVendor').value;
+            const month = document.getElementById('reportVendorMonth').value;
+            
+            if (!month) {
+                alert('Please select a month');
+                return;
+            }
+            
+            // Filter jobs by vendor and month
+            let filteredJobs = jobs;
+            if (vendor) {
+                filteredJobs = filteredJobs.filter(job => job.vendor === vendor);
+            }
+            if (month) {
+                filteredJobs = filteredJobs.filter(job => job.date.startsWith(month));
+            }
+            
+            // Filter payments by vendor and month
+            let filteredPayments = payments;
+            if (vendor) {
+                filteredPayments = filteredPayments.filter(payment => payment.vendor === vendor);
+            }
+            if (month) {
+                filteredPayments = filteredPayments.filter(payment => payment.date.startsWith(month));
+            }
+            
+            // Generate report
+            generateReport({
+                title: `${vendor ? vendor + ' - ' : 'All Vendors - '}${month ? 'Month: ' + month : 'All Time'} Report`,
+                jobs: filteredJobs,
+                payments: filteredPayments,
+                vendor,
+                month
+            });
+        };
+        
+        function generateReport(data) {
+            const reportOutput = document.getElementById('reportOutput');
+            const reportContent = document.getElementById('reportContent');
+            
+            // Store report data for export
+            window.currentReportData = data;
+            
+            // Show report section
+            reportOutput.classList.remove('hidden');
+            
+            // Calculate totals
+            let totalEarnings = 0;
+            data.jobs.forEach(job => totalEarnings += job.total);
+            
+            let totalPayments = 0;
+            data.payments.forEach(payment => totalPayments += payment.amount);
+            
+            const balance = totalEarnings - totalPayments;
+            
+            // Generate HTML
+            let html = `
+                <div class="text-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">${data.title}</h2>
+                    <p class="text-gray-600 dark:text-gray-400">Generated on ${formatDate(new Date().toISOString().split('T')[0])}</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded">
+                        <h4 class="font-bold text-blue-800 dark:text-blue-200">Total Earnings</h4>
+                        <p class="text-xl font-bold text-blue-600 dark:text-blue-300">${formatCurrency(totalEarnings)}</p>
+                    </div>
+                    <div class="p-3 bg-green-100 dark:bg-green-900 rounded">
+                        <h4 class="font-bold text-green-800 dark:text-green-200">Payments Made</h4>
+                        <p class="text-xl font-bold text-green-600 dark:text-green-300">${formatCurrency(totalPayments)}</p>
+                    </div>
+                    <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded">
+                        <h4 class="font-bold text-purple-800 dark:text-purple-200">Balance</h4>
+                        <p class="text-xl font-bold text-purple-600 dark:text-purple-300">${formatCurrency(balance)}</p>
+                    </div>
+                </div>
+            `;
+            
+            // Jobs table
+            if (data.jobs.length > 0) {
+                html += `
+                    <h3 class="font-bold text-gray-800 dark:text-white mb-2">Jobs (${data.jobs.length})</h3>
+                    <div class="overflow-x-auto mb-6">
+                        <table class="min-w-full table-auto border-collapse border border-gray-300 dark:border-gray-700">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white border border-gray-300 dark:border-gray-700">Date</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white border border-gray-300 dark:border-gray-700">Vendor</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white border border-gray-300 dark:border-gray-700">Client</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white border border-gray-300 dark:border-gray-700">Product</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white border border-gray-300 dark:border-gray-700">Quantity</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white border border-gray-300 dark:border-gray-700">Rate</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white border border-gray-300 dark:border-gray-700">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.jobs.forEach(job => {
+                    html += `
+                        <tr class="border-t dark:border-gray-700">
+                            <td class="px-4 py-2 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700">${formatDate(job.date)}</td>
+                            <td class="px-4 py-2 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700">${job.vendor}</td>
+                            <td class="px-4 py-2 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700">${job.clientName}</td>
+                            <td class="px-4 py-2 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700">${job.product}</td>
+                            <td class="px-4 py-2 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700">${job.quantity}</td>
+                            <td class="px-4 py-2 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700">${formatCurrency(job.rate)}</td>
+                            <td class="px-4 py-2 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700">${formatCurrency(job.total)}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                html += `<p class="text-gray-500 dark:text-gray-400 mb-6">No jobs found for the selected criteria.</p>`;
+            }
+            
+            // Payments table
+            if (data.payments.length > 0) {
+                html += `
+                    <h3 class="font-bold text-gray-800 dark:text-white mb-2">Payments (${data.payments.length})</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full table-auto border-collapse border border-gray-300 dark:border-gray-700">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white border border-gray-300 dark:border-gray-700">Date</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white border border-gray-300 dark:border-gray-700">Vendor</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-white border border-gray-300 dark:border-gray-700">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.payments.forEach(payment => {
+                    html += `
+                        <tr class="border-t dark:border-gray-700">
+                            <td class="px-4 py-2 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700">${formatDate(payment.date)}</td>
+                            <td class="px-4 py-2 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700">${payment.vendor}</td>
+                            <td class="px-4 py-2 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700">${formatCurrency(payment.amount)}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                html += `<p class="text-gray-500 dark:text-gray-400">No payments found for the selected criteria.</p>`;
+            }
+            
+            reportContent.innerHTML = html;
+            
+            // Scroll to report
+            reportOutput.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        window.printReport = function() {
+            const reportContent = document.getElementById('reportContent').innerHTML;
+            
+            // Create a new window for printing
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Job Management System - Report</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .summary { display: flex; justify-content: space-between; margin-bottom: 20px; }
+                        .summary-item { padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 30%; }
+                        h2, h3 { margin-top: 0; }
+                        @media print {
+                            button { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div style="text-align: right; margin-bottom: 20px;">
+                        <button onclick="window.print()">Print</button>
+                    </div>
+                    ${reportContent}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        };
+        
+        window.exportReportCSV = function() {
+            if (!window.currentReportData) return;
+            
+            const data = window.currentReportData;
+            let csv = '';
+            
+            // Add report title
+            csv += `"${data.title}"\n\n`;
+            
+            // Add summary
+            let totalEarnings = 0;
+            data.jobs.forEach(job => totalEarnings += job.total);
+            
+            let totalPayments = 0;
+            data.payments.forEach(payment => totalPayments += payment.amount);
+            
+            const balance = totalEarnings - totalPayments;
+            
+            csv += `"Summary"\n`;
+            csv += `"Total Earnings","${totalEarnings}"\n`;
+            csv += `"Payments Made","${totalPayments}"\n`;
+            csv += `"Balance","${balance}"\n\n`;
+            
+            // Add jobs
+            if (data.jobs.length > 0) {
+                csv += `"Jobs"\n`;
+                csv += `"Date","Vendor","Client","Product","Quantity","Rate","Total"\n`;
+                
+                data.jobs.forEach(job => {
+                    csv += `"${job.date}","${job.vendor}","${job.clientName}","${job.product}","${job.quantity}","${job.rate}","${job.total}"\n`;
+                });
+                
+                csv += '\n';
+            }
+            
+            // Add payments
+            if (data.payments.length > 0) {
+                csv += `"Payments"\n`;
+                csv += `"Date","Vendor","Amount"\n`;
+                
+                data.payments.forEach(payment => {
+                    csv += `"${payment.date}","${payment.vendor}","${payment.amount}"\n`;
+                });
+            }
+            
+            // Create download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+        
+        // Backup and Restore functions
+        window.createBackup = function() {
+            // Create backup object with all data
+            const backupData = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                data: {
+                    users: users,
+                    products: products,
+                    jobs: jobs,
+                    payments: payments
+                }
+            };
+            
+            // Convert to JSON
+            const backupJson = JSON.stringify(backupData, null, 2);
+            
+            // Create download link
+            const blob = new Blob([backupJson], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `job_management_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            alert('Backup created successfully! The file has been downloaded to your device.');
+        };
+        
+        window.restoreBackup = function() {
+            const fileInput = document.getElementById('restoreFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a backup file to restore.');
+                return;
+            }
+            
+            if (!confirm('WARNING: Restoring from backup will replace all current data. This action cannot be undone. Continue?')) {
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    
+                    // Validate backup format
+                    if (!backupData.version || !backupData.data || 
+                        !backupData.data.users || !backupData.data.products || 
+                        !backupData.data.jobs || !backupData.data.payments) {
+                        throw new Error('Invalid backup file format');
+                    }
+                    
+                    // Restore data
+                    users = backupData.data.users;
+                    products = backupData.data.products;
+                    jobs = backupData.data.jobs;
+                    payments = backupData.data.payments;
+                    
+                    // Ensure admin user exists
+                    const hasAdmin = users.some(u => u.username === 'admin' && u.role === 'admin');
+                    if (!hasAdmin) {
+                        users.push({ id: 'admin-default', username: 'admin', password: 'admin123', role: 'admin' });
+                    }
+                    
+                    // Save to localStorage
+                    saveDataToLocalStorage();
+                    
+                    // Refresh UI
+                    refreshData();
+                    
+                    alert('Data restored successfully from backup!');
+                    fileInput.value = ''; // Clear file input
+                } catch (error) {
+                    console.error('Error restoring backup:', error);
+                    alert('Error restoring backup: ' + error.message);
+                }
+            };
+            
+            reader.readAsText(file);
+        };
+
+        // This function will clear all localStorage data - Use only for debugging
+        window.resetAllData = function() {
+            if (confirm('WARNING: This will delete ALL data and reset the application. Continue?')) {
+                localStorage.removeItem('jobAppUsers');
+                localStorage.removeItem('jobAppProducts');
+                localStorage.removeItem('jobAppJobs');
+                localStorage.removeItem('jobAppPayments');
+                
+                alert('All data has been cleared. The page will now reload.');
+                location.reload();
+            }
+        };
+
+        // System Settings functions
+        document.getElementById('settingsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form values
+            const companyName = document.getElementById('companyName').value;
+            const currencySymbol = document.getElementById('currencySymbol').value || '₹';
+            const itemsPerPageValue = parseInt(document.getElementById('itemsPerPage').value);
+            const sessionTimeout = parseInt(document.getElementById('sessionTimeout').value);
+            const requireStrongPasswords = document.getElementById('requireStrongPasswords').checked;
+            
+            // Update settings
+            systemSettings = {
+                companyName,
+                currencySymbol,
+                itemsPerPage: itemsPerPageValue,
+                sessionTimeout,
+                requireStrongPasswords
+            };
+            
+            // Apply settings
+            itemsPerPage = itemsPerPageValue;
+            document.title = companyName;
+            
+            // Save settings
+            saveDataToLocalStorage();
+            
+            // Refresh UI
+            refreshData();
+            
+            alert('Settings saved successfully!');
+        });
+        
+        // Load settings into form
+        function loadSettingsIntoForm() {
+            document.getElementById('companyName').value = systemSettings.companyName || '';
+            document.getElementById('currencySymbol').value = systemSettings.currencySymbol || '₹';
+            document.getElementById('itemsPerPage').value = systemSettings.itemsPerPage || 10;
+            document.getElementById('sessionTimeout').value = systemSettings.sessionTimeout || 30;
+            document.getElementById('requireStrongPasswords').checked = systemSettings.requireStrongPasswords || false;
+            
+            // Apply company name to title
+            if (systemSettings.companyName) {
+                document.title = systemSettings.companyName;
+            }
+        }
+
+        // Function to refresh products list
+        function refreshProductsList() {
+            const productsList = document.getElementById('productsList');
+            if (!productsList) return;
+            
+            productsList.innerHTML = '';
+            
+            if (products.length === 0) {
+                productsList.innerHTML = '<tr><td colspan="3" class="px-4 py-2 text-center text-gray-800 dark:text-gray-300">No products found</td></tr>';
+                return;
+            }
+            
+            products.forEach(product => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-t dark:border-gray-700';
+                
+                const nameCell = document.createElement('td');
+                nameCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
+                nameCell.textContent = product.name;
+                
+                const rateCell = document.createElement('td');
+                rateCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
+                rateCell.textContent = formatCurrency(product.rate);
+                
+                const actionsCell = document.createElement('td');
+                actionsCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
+                
+                // Only admin and subadmin can edit/delete products
+                if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'subadmin')) {
+                    const editButton = document.createElement('button');
+                    editButton.className = 'text-blue-500 hover:text-blue-700 mr-2';
+                    editButton.innerHTML = '<i class="bi bi-pencil"></i>';
+                    editButton.onclick = function() { editProduct(product.name); };
+                    
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'text-red-500 hover:text-red-700';
+                    deleteButton.innerHTML = '<i class="bi bi-trash"></i>';
+                    deleteButton.onclick = function() { deleteProduct(product.name); };
+                    
+                    actionsCell.appendChild(editButton);
+                    actionsCell.appendChild(deleteButton);
+                }
+                
+                tr.appendChild(nameCell);
+                tr.appendChild(rateCell);
+                tr.appendChild(actionsCell);
+                
+                productsList.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
