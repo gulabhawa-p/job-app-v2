@@ -78,13 +78,8 @@
                             </a>
                         </li>
                         <li class="nav-item" id="usersNav">
-                            <a href="#" class="nav-link" data-page="users">
-                                <i class="bi bi-people mr-2"></i>Users
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link" data-page="products">
-                                <i class="bi bi-box mr-2"></i>Products
+                            <a href="#" class="nav-link" data-page="user-product">
+                                <i class="bi bi-people-fill mr-2"></i>User & Product
                             </a>
                         </li>
                         <li class="nav-item">
@@ -161,105 +156,110 @@
                 </div>
             </div>
             
-            <!-- Users Page -->
-            <div id="users-page" class="page-section">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
-                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add User</h3>
-                    <form id="userForm" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Username</label>
-                                <input type="text" id="userUsername" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Password</label>
-                                <input type="password" id="userPassword" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Name</label>
-                                <input type="text" id="userName" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Email</label>
-                                <input type="email" id="userEmail" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Phone</label>
-                                <input type="text" id="userPhone" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Role</label>
-                                <select id="userRole" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                    <option value="admin">Admin</option>
-                                    <option value="subadmin">Sub Admin</option>
-                                    <option value="user">User</option>
-                                </select>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="userActive" class="mr-2">
-                                <label class="text-gray-700 dark:text-gray-300">Active</label>
+            <!-- User & Product Management Page -->
+            <div id="user-product-page" class="page-section">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Users Section -->
+                    <div>
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+                            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add User</h3>
+                            <form id="userForm" class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                                        <input type="text" id="userUsername" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                                        <input type="password" id="userPassword" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Name</label>
+                                        <input type="text" id="userName" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                                        <input type="email" id="userEmail" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Phone</label>
+                                        <input type="text" id="userPhone" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Role</label>
+                                        <select id="userRole" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                            <option value="admin">Admin</option>
+                                            <option value="subadmin">Sub Admin</option>
+                                            <option value="user">User</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="userActive" class="mr-2">
+                                        <label class="text-gray-700 dark:text-gray-300">Active</label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add User</button>
+                            </form>
+                        </div>
+                        
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Users List</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full">
+                                    <thead>
+                                        <tr class="bg-gray-100 dark:bg-gray-700">
+                                            <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Name</th>
+                                            <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Username</th>
+                                            <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Email</th>
+                                            <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Role</th>
+                                            <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Status</th>
+                                            <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="usersList">
+                                        <!-- Users will be loaded here -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add User</button>
-                    </form>
-                </div>
-                
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Users List</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full">
-                            <thead>
-                                <tr class="bg-gray-100 dark:bg-gray-700">
-                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Name</th>
-                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Username</th>
-                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Email</th>
-                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Role</th>
-                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Status</th>
-                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="usersList">
-                                <!-- Users will be loaded here -->
-                            </tbody>
-                        </table>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Products Page -->
-            <div id="products-page" class="page-section">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
-                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add Product</h3>
-                    <form id="productForm" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Product Name</label>
-                                <input type="text" id="productName" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Rate</label>
-                                <input type="number" id="productRate" step="0.01" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    
+                    <!-- Products Section -->
+                    <div>
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+                            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add Product</h3>
+                            <form id="productForm" class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Product Name</label>
+                                        <input type="text" id="productName" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Rate</label>
+                                        <input type="number" id="productRate" step="0.01" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                </div>
+                                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add Product</button>
+                            </form>
+                        </div>
+                        
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Products List</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full">
+                                    <thead>
+                                        <tr class="bg-gray-100 dark:bg-gray-700">
+                                            <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Product Name</th>
+                                            <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Rate</th>
+                                            <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="productsList">
+                                        <!-- Products will be loaded here -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add Product</button>
-                    </form>
-                </div>
-                
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Products List</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full">
-                            <thead>
-                                <tr class="bg-gray-100 dark:bg-gray-700">
-                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Product Name</th>
-                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Rate</th>
-                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="productsList">
-                                <!-- Products will be loaded here -->
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
