@@ -304,6 +304,10 @@ function refreshJobsList() {
         statusBadge.textContent = job.status.charAt(0).toUpperCase() + job.status.slice(1);
         statusCell.appendChild(statusBadge);
         
+        const dueDateCell = document.createElement('td');
+        dueDateCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
+        dueDateCell.textContent = job.dueDate;
+        
         const amountCell = document.createElement('td');
         amountCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
         amountCell.textContent = formatCurrency(job.totalAmount);
@@ -338,9 +342,114 @@ function refreshJobsList() {
         tr.appendChild(clientCell);
         tr.appendChild(vendorCell);
         tr.appendChild(statusCell);
+        tr.appendChild(dueDateCell);
         tr.appendChild(amountCell);
         tr.appendChild(actionsCell);
         
         jobsList.appendChild(tr);
     });
-} 
+}
+
+// View job details
+window.viewJob = function(id) {
+    const job = jobs.find(j => j.id === id);
+    if (job) {
+        let productsHtml = '';
+        job.products.forEach(product => {
+            productsHtml += `
+                <tr class="border-t dark:border-gray-700">
+                    <td class="px-4 py-2 text-gray-800 dark:text-gray-300">${product.name}</td>
+                    <td class="px-4 py-2 text-gray-800 dark:text-gray-300">${formatCurrency(product.rate)}</td>
+                    <td class="px-4 py-2 text-gray-800 dark:text-gray-300">${product.quantity}</td>
+                    <td class="px-4 py-2 text-gray-800 dark:text-gray-300">${formatCurrency(product.total)}</td>
+                </tr>
+            `;
+        });
+        
+        let statusClass = '';
+        switch (job.status) {
+            case 'pending':
+                statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                break;
+            case 'in-progress':
+                statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                break;
+            case 'completed':
+                statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                break;
+            case 'cancelled':
+                statusClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                break;
+        }
+        
+        const jobDetails = `
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Job Details</h3>
+                    <button onclick="closeJobDetails()" class="text-gray-500 hover:text-gray-700">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400">Job Title</p>
+                        <p class="font-bold text-gray-800 dark:text-white">${job.title}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400">Client</p>
+                        <p class="font-bold text-gray-800 dark:text-white">${job.client}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400">Vendor</p>
+                        <p class="font-bold text-gray-800 dark:text-white">${job.vendor}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400">Status</p>
+                        <p><span class="${statusClass} px-2 py-1 rounded">${job.status.charAt(0).toUpperCase() + job.status.slice(1)}</span></p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400">Due Date</p>
+                        <p class="font-bold text-gray-800 dark:text-white">${job.dueDate}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400">Total Amount</p>
+                        <p class="font-bold text-gray-800 dark:text-white">${formatCurrency(job.totalAmount)}</p>
+                    </div>
+                </div>
+                
+                <h4 class="font-bold text-gray-800 dark:text-white mb-2">Products</h4>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Product</th>
+                                <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Rate</th>
+                                <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Quantity</th>
+                                <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${productsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        
+        // Insert job details before the jobs list
+        const jobsList = document.querySelector('#jobsList').closest('.bg-white');
+        jobsList.insertAdjacentHTML('beforebegin', jobDetails);
+        
+        // Scroll to job details
+        document.querySelector('#jobsList').closest('.bg-white').previousElementSibling.scrollIntoView({ behavior: 'smooth' });
+    }
+};
+
+// Close job details
+window.closeJobDetails = function() {
+    const jobDetails = document.querySelector('#jobsList').closest('.bg-white').previousElementSibling;
+    if (jobDetails && jobDetails.querySelector('h3').textContent === 'Job Details') {
+        jobDetails.remove();
+    }
+}; 
