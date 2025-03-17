@@ -35,8 +35,9 @@ function loadDataFromLocalStorage() {
     payments = JSON.parse(localStorage.getItem('payments')) || [];
     systemSettings = JSON.parse(localStorage.getItem('systemSettings')) || systemSettings;
     
-    // Create default admin user if no users exist
+    // Create default users if no users exist
     if (users.length === 0) {
+        // Admin user
         users.push({
             id: generateId(),
             username: 'admin',
@@ -47,6 +48,43 @@ function loadDataFromLocalStorage() {
             phone: '1234567890',
             active: true
         });
+        
+        // Subadmin user
+        users.push({
+            id: generateId(),
+            username: 'subadmin',
+            password: 'subadmin123',
+            name: 'Sub Administrator',
+            role: 'subadmin',
+            email: 'subadmin@example.com',
+            phone: '1234567891',
+            active: true
+        });
+        
+        // Vendor user
+        users.push({
+            id: generateId(),
+            username: 'vendor',
+            password: 'vendor123',
+            name: 'Vendor User',
+            role: 'user',
+            email: 'vendor@example.com',
+            phone: '1234567892',
+            active: true
+        });
+        
+        // Account user
+        users.push({
+            id: generateId(),
+            username: 'account',
+            password: 'account123',
+            name: 'Account User',
+            role: 'user',
+            email: 'account@example.com',
+            phone: '1234567893',
+            active: true
+        });
+        
         saveDataToLocalStorage();
     }
 }
@@ -76,7 +114,7 @@ function initializeUI() {
     }
     
     // Check if user is logged in
-    const savedUser = localStorage.getItem('currentUser');
+    const savedUser = sessionStorage.getItem('currentUser');
     if (savedUser) {
         currentUser = JSON.parse(savedUser);
         showAdminPanel();

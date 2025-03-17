@@ -22,7 +22,7 @@ function handleLogin(e) {
         
         // Set current user
         currentUser = user;
-        localStorage.setItem('currentUser', JSON.stringify(user));
+        sessionStorage.setItem('currentUser', JSON.stringify(user));
         
         // Show admin panel
         showAdminPanel();
@@ -35,7 +35,7 @@ function handleLogin(e) {
 function handleLogout() {
     // Clear current user
     currentUser = null;
-    localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('currentUser');
     
     // Show login section
     showLoginSection();
@@ -55,6 +55,9 @@ function showAdminPanel() {
     // Update user info
     document.getElementById('currentUserName').textContent = currentUser.name;
     document.getElementById('currentUserRole').textContent = currentUser.role;
+    
+    // Add tab identifier to title
+    document.title = `${systemSettings.companyName} - ${currentUser.name} (${currentUser.role})`;
     
     // Set permissions based on role
     setPermissions();
