@@ -363,7 +363,64 @@
             
             <!-- Payments Page -->
             <div id="payments-page" class="page-section">
-                <!-- Payments content will be here -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Add Payment</h3>
+                    <form id="paymentForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Job</label>
+                                <select id="paymentJob" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <option value="">Select Job</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Amount</label>
+                                <input type="number" id="paymentAmount" step="0.01" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Payment Method</label>
+                                <select id="paymentMethod" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <option value="">Select Method</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="bank-transfer">Bank Transfer</option>
+                                    <option value="credit-card">Credit Card</option>
+                                    <option value="check">Check</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Payment Date</label>
+                                <input type="date" id="paymentDate" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+                                <textarea id="paymentNotes" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add Payment</button>
+                    </form>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Payments List</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Job</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Client</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Amount</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Method</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Date</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paymentsList">
+                                <!-- Payments will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
             
             <!-- Reports Page -->

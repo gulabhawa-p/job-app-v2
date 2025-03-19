@@ -73,6 +73,7 @@ function showAdminPanel() {
 function setPermissions() {
     const isAdmin = currentUser.role === 'admin';
     const isSubAdmin = currentUser.role === 'subadmin';
+    const isVendor = currentUser.role === 'vendor';
     
     // Admin dashboard visibility
     document.getElementById('adminDashboard').style.display = (isAdmin || isSubAdmin) ? 'block' : 'none';
@@ -82,6 +83,49 @@ function setPermissions() {
     
     // Settings visibility
     document.getElementById('settingsNav').style.display = isAdmin ? 'block' : 'none';
+    
+    // Jobs Page visibility - hide jobs "Add" page from vendors
+    if (isVendor) {
+        const jobsNavItem = document.querySelector('.nav-link[data-page="jobs"]').closest('.nav-item');
+        jobsNavItem.style.display = 'none';
+    } else {
+        const jobsNavItem = document.querySelector('.nav-link[data-page="jobs"]').closest('.nav-item');
+        jobsNavItem.style.display = 'block';
+    }
+    
+    // Hide payment form for vendors
+    document.addEventListener('DOMContentLoaded', function() {
+        if (isVendor) {
+            // We'll use setTimeout to ensure this executes after the page is loaded
+            setTimeout(function() {
+                // Check if we're on the payments page
+                const paymentsPage = document.getElementById('payments-page');
+                if (paymentsPage && paymentsPage.classList.contains('active')) {
+                    // Hide payment form
+                    const paymentForm = document.getElementById('paymentForm');
+                    if (paymentForm) {
+                        paymentForm.closest('.bg-white').style.display = 'none';
+                    }
+                }
+            }, 100);
+        }
+    });
+    
+    // Add event listener for nav links to handle payment form visibility when switching to payments page
+    const paymentNavLink = document.querySelector('.nav-link[data-page="payments"]');
+    if (paymentNavLink) {
+        paymentNavLink.addEventListener('click', function() {
+            if (isVendor) {
+                // When vendor clicks on payments tab, hide the payment form
+                setTimeout(function() {
+                    const paymentForm = document.getElementById('paymentForm');
+                    if (paymentForm) {
+                        paymentForm.closest('.bg-white').style.display = 'none';
+                    }
+                }, 100);
+            }
+        });
+    }
     
     // Edit/Delete buttons visibility
     const actionButtons = document.querySelectorAll('.admin-only');

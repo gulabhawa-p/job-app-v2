@@ -223,12 +223,18 @@ function refreshJobsList() {
     
     jobsList.innerHTML = '';
     
-    if (jobs.length === 0) {
+    // Filter jobs for vendors - they can only see jobs assigned to them
+    let filteredJobs = jobs;
+    if (currentUser && currentUser.role === 'vendor') {
+        filteredJobs = jobs.filter(job => job.vendor === currentUser.name);
+    }
+    
+    if (filteredJobs.length === 0) {
         jobsList.innerHTML = '<tr><td colspan="7" class="px-4 py-2 text-center text-gray-800 dark:text-gray-300">No jobs found</td></tr>';
         return;
     }
     
-    jobs.forEach(job => {
+    filteredJobs.forEach(job => {
         const tr = document.createElement('tr');
         tr.className = 'border-t dark:border-gray-700';
         

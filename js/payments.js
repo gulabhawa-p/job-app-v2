@@ -111,8 +111,14 @@ function populateJobSelect() {
     emptyOption.textContent = 'Select Job';
     jobSelect.appendChild(emptyOption);
     
+    // Filter jobs for vendors
+    let filteredJobs = jobs;
+    if (currentUser && currentUser.role === 'vendor') {
+        filteredJobs = jobs.filter(job => job.vendor === currentUser.name);
+    }
+    
     // Add job options
-    jobs.forEach(job => {
+    filteredJobs.forEach(job => {
         // Calculate remaining amount
         const paidAmount = payments.filter(p => p.jobId === job.id).reduce((sum, p) => sum + p.amount, 0);
         const remainingAmount = job.totalAmount - paidAmount;
@@ -201,12 +207,23 @@ function refreshPaymentsList() {
     
     paymentsList.innerHTML = '';
     
-    if (payments.length === 0) {
+    // Filter payments for vendors - they can only see payments for their jobs
+    let filteredPayments = payments;
+    if (currentUser && currentUser.role === 'vendor') {
+        // First get all jobs assigned to this vendor
+        const vendorJobs = jobs.filter(job => job.vendor === currentUser.name);
+        const vendorJobIds = vendorJobs.map(job => job.id);
+        
+        // Then filter payments for those jobs
+        filteredPayments = payments.filter(payment => vendorJobIds.includes(payment.jobId));
+    }
+    
+    if (filteredPayments.length === 0) {
         paymentsList.innerHTML = '<tr><td colspan="6" class="px-4 py-2 text-center text-gray-800 dark:text-gray-300">No payments found</td></tr>';
         return;
     }
     
-    payments.forEach(payment => {
+    filteredPayments.forEach(payment => {
         const job = jobs.find(j => j.id === payment.jobId);
         if (!job) return;
         

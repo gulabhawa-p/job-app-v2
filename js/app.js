@@ -196,13 +196,19 @@ function refreshAdminDashboard() {
     if (recentJobsList) {
         recentJobsList.innerHTML = '';
         
-        if (jobs.length === 0) {
+        // Filter jobs for vendors - they can only see jobs assigned to them
+        let filteredJobs = jobs;
+        if (currentUser && currentUser.role === 'vendor') {
+            filteredJobs = jobs.filter(job => job.vendor === currentUser.name);
+        }
+        
+        if (filteredJobs.length === 0) {
             recentJobsList.innerHTML = '<tr><td colspan="6" class="px-4 py-2 text-center text-gray-800 dark:text-gray-300">No jobs found</td></tr>';
             return;
         }
         
         // Sort jobs by creation date (newest first)
-        const sortedJobs = [...jobs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const sortedJobs = [...filteredJobs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         
         // Take only the 5 most recent jobs
         const recentJobs = sortedJobs.slice(0, 5);
