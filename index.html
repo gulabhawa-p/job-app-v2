@@ -98,6 +98,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="jobs-list">
+                                <i class="bi bi-list-check mr-2"></i>Jobs List
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="#" class="nav-link" data-page="payments">
                                 <i class="bi bi-cash-coin mr-2"></i>Payments
                             </a>
@@ -329,7 +334,10 @@
                         <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add Job</button>
                     </form>
                 </div>
-                
+            </div>
+            
+            <!-- Jobs List Page -->
+            <div id="jobs-list-page" class="page-section">
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
                     <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Jobs List</h3>
                     <div class="overflow-x-auto">
@@ -342,6 +350,7 @@
                                     <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Status</th>
                                     <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Due Date</th>
                                     <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Amount</th>
+                                    <th class="px-4 py-2 text-left text-gray-800 dark:text-gray-300">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="jobsList">

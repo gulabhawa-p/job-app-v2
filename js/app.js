@@ -118,6 +118,12 @@ function initializeUI() {
     if (savedUser) {
         currentUser = JSON.parse(savedUser);
         showAdminPanel();
+        
+        // Make sure all data is loaded
+        refreshData();
+        
+        // Load initial page (dashboard)
+        loadPage('dashboard');
     } else {
         showLoginSection();
     }

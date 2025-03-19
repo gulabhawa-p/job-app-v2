@@ -52,18 +52,10 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
                 totalAmount,
                 updatedAt: new Date().toISOString()
             };
-            saveDataToLocalStorage();
-            refreshJobsList();
-            
-            // Reset form
-            document.getElementById('jobForm').reset();
-            document.querySelector('#jobProductsTable tbody').innerHTML = '';
-            addProductRow();
-            document.querySelector('#jobForm button[type="submit"]').textContent = 'Add Job';
-            editingItem = null;
-            
             alert('Job updated successfully!');
         }
+        editingItem = null;
+        document.querySelector('#jobForm button[type="submit"]').textContent = 'Add Job';
     } else {
         // Add new job
         const newJob = {
@@ -80,21 +72,28 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
         };
         
         jobs.push(newJob);
-        saveDataToLocalStorage();
-        refreshJobsList();
-        
-        // Reset form
-        document.getElementById('jobForm').reset();
-        document.querySelector('#jobProductsTable tbody').innerHTML = '';
-        addProductRow();
-        
         alert('Job added successfully!');
     }
+    
+    // Save data
+    saveDataToLocalStorage();
+    
+    // Reset form
+    this.reset();
+    document.querySelector('#jobProductsTable tbody').innerHTML = '';
+    
+    // Add empty product row
+    addProductRow();
+    
+    // Refresh jobs list
+    refreshJobsList();
+    
+    // Navigate to jobs list page
+    loadPage('jobs-list');
 });
 
 // Add product row to job form
-window.addProductRow = function() {
-    const tbody = document.querySelector('#jobProductsTable tbody');
+window.addProductRow = function(existingProduct = null) {
     const tr = document.createElement('tr');
     
     const productCell = document.createElement('td');
@@ -114,6 +113,12 @@ window.addProductRow = function() {
         const option = document.createElement('option');
         option.value = product.name;
         option.textContent = product.name + ' (' + formatCurrency(product.rate) + ')';
+        
+        // If we have an existing product, select it
+        if (existingProduct && product.name === existingProduct.name) {
+            option.selected = true;
+        }
+        
         productSelect.appendChild(option);
     });
     
@@ -125,8 +130,14 @@ window.addProductRow = function() {
     const quantityInput = document.createElement('input');
     quantityInput.type = 'number';
     quantityInput.min = '1';
-    quantityInput.value = '1';
     quantityInput.className = 'w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white';
+    
+    // If we have an existing product, set quantity
+    if (existingProduct) {
+        quantityInput.value = existingProduct.quantity;
+    } else {
+        quantityInput.value = '1';
+    }
     
     quantityCell.appendChild(quantityInput);
     
@@ -147,13 +158,17 @@ window.addProductRow = function() {
     tr.appendChild(quantityCell);
     tr.appendChild(actionCell);
     
-    tbody.appendChild(tr);
+    document.querySelector('#jobProductsTable tbody').appendChild(tr);
 };
 
 // Edit job
 window.editJob = function(id) {
     const job = jobs.find(j => j.id === id);
     if (job) {
+        // Switch to jobs page
+        loadPage('jobs');
+        
+        // Populate form with job data
         document.getElementById('jobTitle').value = job.title;
         document.getElementById('jobClient').value = job.client;
         document.getElementById('jobVendor').value = job.vendor;
@@ -165,66 +180,11 @@ window.editJob = function(id) {
         
         // Add product rows
         job.products.forEach(product => {
-            const tr = document.createElement('tr');
-            
-            const productCell = document.createElement('td');
-            productCell.className = 'px-4 py-2';
-            
-            const productSelect = document.createElement('select');
-            productSelect.className = 'w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white';
-            
-            // Add empty option
-            const emptyOption = document.createElement('option');
-            emptyOption.value = '';
-            emptyOption.textContent = 'Select Product';
-            productSelect.appendChild(emptyOption);
-            
-            // Add product options
-            products.forEach(p => {
-                const option = document.createElement('option');
-                option.value = p.name;
-                option.textContent = p.name + ' (' + formatCurrency(p.rate) + ')';
-                option.selected = p.name === product.name;
-                productSelect.appendChild(option);
-            });
-            
-            productCell.appendChild(productSelect);
-            
-            const quantityCell = document.createElement('td');
-            quantityCell.className = 'px-4 py-2';
-            
-            const quantityInput = document.createElement('input');
-            quantityInput.type = 'number';
-            quantityInput.min = '1';
-            quantityInput.value = product.quantity;
-            quantityInput.className = 'w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white';
-            
-            quantityCell.appendChild(quantityInput);
-            
-            const actionCell = document.createElement('td');
-            actionCell.className = 'px-4 py-2';
-            
-            const removeButton = document.createElement('button');
-            removeButton.type = 'button';
-            removeButton.className = 'text-red-500 hover:text-red-700';
-            removeButton.innerHTML = '<i class="bi bi-trash"></i>';
-            removeButton.onclick = function() {
-                tr.remove();
-            };
-            
-            actionCell.appendChild(removeButton);
-            
-            tr.appendChild(productCell);
-            tr.appendChild(quantityCell);
-            tr.appendChild(actionCell);
-            
-            document.querySelector('#jobProductsTable tbody').appendChild(tr);
+            addProductRow(product);
         });
         
-        document.querySelector('#jobForm button[type="submit"]').textContent = 'Update Job';
-        
         // Set editing state
-        editingItem = id;
+        editingItem = job.id;
         
         // Scroll to form
         document.getElementById('jobForm').scrollIntoView({ behavior: 'smooth' });
@@ -234,6 +194,11 @@ window.editJob = function(id) {
 // Delete job
 window.deleteJob = function(id) {
     if (!confirm('Are you sure you want to delete this job?')) return;
+    
+    // Make sure we're on the jobs-list page
+    if (!document.getElementById('jobs-list-page').classList.contains('active')) {
+        loadPage('jobs-list');
+    }
     
     const index = jobs.findIndex(j => j.id === id);
     if (index !== -1) {
@@ -259,7 +224,7 @@ function refreshJobsList() {
     jobsList.innerHTML = '';
     
     if (jobs.length === 0) {
-        jobsList.innerHTML = '<tr><td colspan="6" class="px-4 py-2 text-center text-gray-800 dark:text-gray-300">No jobs found</td></tr>';
+        jobsList.innerHTML = '<tr><td colspan="7" class="px-4 py-2 text-center text-gray-800 dark:text-gray-300">No jobs found</td></tr>';
         return;
     }
     
@@ -383,38 +348,31 @@ window.viewJob = function(id) {
         }
         
         const jobDetails = `
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-white">Job Details</h3>
-                    <button onclick="closeJobDetails()" class="text-gray-500 hover:text-gray-700">
-                        <i class="bi bi-x-lg"></i>
+                    <button onclick="closeJobDetails()" class="text-gray-500 hover:text-red-500">
+                        <i class="bi bi-x-circle-fill text-xl"></i>
                     </button>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <p class="text-gray-600 dark:text-gray-400">Job Title</p>
-                        <p class="font-bold text-gray-800 dark:text-white">${job.title}</p>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">Basic Information</h4>
+                        <p class="text-gray-700 dark:text-gray-300"><strong>Title:</strong> ${job.title}</p>
+                        <p class="text-gray-700 dark:text-gray-300"><strong>Client:</strong> ${job.client}</p>
+                        <p class="text-gray-700 dark:text-gray-300"><strong>Vendor:</strong> ${job.vendor}</p>
+                        <p class="text-gray-700 dark:text-gray-300">
+                            <strong>Status:</strong> 
+                            <span class="${statusClass} px-2 py-1 rounded">
+                                ${job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                            </span>
+                        </p>
                     </div>
                     <div>
-                        <p class="text-gray-600 dark:text-gray-400">Client</p>
-                        <p class="font-bold text-gray-800 dark:text-white">${job.client}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600 dark:text-gray-400">Vendor</p>
-                        <p class="font-bold text-gray-800 dark:text-white">${job.vendor}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600 dark:text-gray-400">Status</p>
-                        <p><span class="${statusClass} px-2 py-1 rounded">${job.status.charAt(0).toUpperCase() + job.status.slice(1)}</span></p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600 dark:text-gray-400">Due Date</p>
-                        <p class="font-bold text-gray-800 dark:text-white">${job.dueDate}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600 dark:text-gray-400">Total Amount</p>
-                        <p class="font-bold text-gray-800 dark:text-white">${formatCurrency(job.totalAmount)}</p>
+                        <h4 class="font-bold text-gray-800 dark:text-white mb-2">Payment Details</h4>
+                        <p class="text-gray-700 dark:text-gray-300"><strong>Due Date:</strong> ${job.dueDate}</p>
+                        <p class="text-gray-700 dark:text-gray-300"><strong>Total Amount:</strong> ${formatCurrency(job.totalAmount)}</p>
                     </div>
                 </div>
                 
@@ -437,6 +395,11 @@ window.viewJob = function(id) {
             </div>
         `;
         
+        // First switch to jobs-list page if we're not already there
+        if (!document.getElementById('jobs-list-page').classList.contains('active')) {
+            loadPage('jobs-list');
+        }
+
         // Insert job details before the jobs list
         const jobsList = document.querySelector('#jobsList').closest('.bg-white');
         jobsList.insertAdjacentHTML('beforebegin', jobDetails);

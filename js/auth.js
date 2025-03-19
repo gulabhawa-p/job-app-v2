@@ -62,11 +62,11 @@ function showAdminPanel() {
     // Set permissions based on role
     setPermissions();
     
-    // Load initial page
-    loadPage('dashboard');
-    
-    // Refresh data
+    // First refresh data
     refreshData();
+    
+    // Then load initial page
+    loadPage('dashboard');
 }
 
 // Set permissions based on user role
