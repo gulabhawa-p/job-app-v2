@@ -5,7 +5,6 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
     const title = document.getElementById('jobTitle').value;
     const client = document.getElementById('jobClient').value;
     const vendor = document.getElementById('jobVendor').value;
-    const status = document.getElementById('jobStatus').value;
     const dueDate = document.getElementById('jobDueDate').value;
     
     // Get selected products
@@ -29,7 +28,7 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
     });
     
     // Validate inputs
-    if (!title || !client || !vendor || !status || !dueDate || selectedProducts.length === 0) {
+    if (!title || !client || !vendor || !dueDate || selectedProducts.length === 0) {
         alert('Please fill all required fields and add at least one product');
         return;
     }
@@ -46,16 +45,23 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
                 title,
                 client,
                 vendor,
-                status,
+                status: 'pending', // Default status
                 dueDate,
                 products: selectedProducts,
-                totalAmount,
-                updatedAt: new Date().toISOString()
+                amount: totalAmount,
+                lastUpdated: new Date().toISOString()
             };
+            saveDataToLocalStorage();
+            refreshJobsList();
+            
+            // Reset form
+            document.getElementById('jobForm').reset();
+            document.querySelector('#jobProductsTable tbody').innerHTML = '';
+            document.querySelector('#jobForm button[type="submit"]').textContent = 'Add Job';
+            editingItem = null;
+            
             alert('Job updated successfully!');
         }
-        editingItem = null;
-        document.querySelector('#jobForm button[type="submit"]').textContent = 'Add Job';
     } else {
         // Add new job
         const newJob = {
@@ -63,34 +69,47 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
             title,
             client,
             vendor,
-            status,
+            status: 'pending', // Default status
             dueDate,
             products: selectedProducts,
-            totalAmount,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            amount: totalAmount,
+            created: new Date().toISOString(),
+            lastUpdated: new Date().toISOString()
         };
         
         jobs.push(newJob);
+        saveDataToLocalStorage();
+        refreshJobsList();
+        
+        // Reset form
+        document.getElementById('jobForm').reset();
+        document.querySelector('#jobProductsTable tbody').innerHTML = '';
+        
         alert('Job added successfully!');
     }
-    
-    // Save data
-    saveDataToLocalStorage();
-    
-    // Reset form
-    this.reset();
-    document.querySelector('#jobProductsTable tbody').innerHTML = '';
-    
-    // Add empty product row
-    addProductRow();
-    
-    // Refresh jobs list
-    refreshJobsList();
-    
-    // Navigate to jobs list page
-    loadPage('jobs-list');
 });
+
+// Load vendors dropdown
+function loadVendorsDropdown() {
+    const vendorSelect = document.getElementById('jobVendor');
+    if (!vendorSelect) return;
+    
+    // Clear existing options except first one
+    while (vendorSelect.options.length > 1) {
+        vendorSelect.remove(1);
+    }
+    
+    // Get vendor users
+    const vendorUsers = users.filter(user => user.role === 'vendor' && user.active);
+    
+    // Add vendor options
+    vendorUsers.forEach(vendor => {
+        const option = document.createElement('option');
+        option.value = vendor.username;
+        option.textContent = vendor.username;
+        vendorSelect.appendChild(option);
+    });
+}
 
 // Add product row to job form
 window.addProductRow = function(existingProduct = null) {
@@ -172,7 +191,6 @@ window.editJob = function(id) {
         document.getElementById('jobTitle').value = job.title;
         document.getElementById('jobClient').value = job.client;
         document.getElementById('jobVendor').value = job.vendor;
-        document.getElementById('jobStatus').value = job.status;
         document.getElementById('jobDueDate').value = job.dueDate;
         
         // Clear product rows
@@ -185,6 +203,9 @@ window.editJob = function(id) {
         
         // Set editing state
         editingItem = job.id;
+        
+        // Update button text
+        document.querySelector('#jobForm button[type="submit"]').textContent = 'Update Job';
         
         // Scroll to form
         document.getElementById('jobForm').scrollIntoView({ behavior: 'smooth' });
@@ -281,7 +302,7 @@ function refreshJobsList() {
         
         const amountCell = document.createElement('td');
         amountCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
-        amountCell.textContent = formatCurrency(job.totalAmount);
+        amountCell.textContent = formatCurrency(job.amount);
         
         const actionsCell = document.createElement('td');
         actionsCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
@@ -378,7 +399,7 @@ window.viewJob = function(id) {
                     <div>
                         <h4 class="font-bold text-gray-800 dark:text-white mb-2">Payment Details</h4>
                         <p class="text-gray-700 dark:text-gray-300"><strong>Due Date:</strong> ${job.dueDate}</p>
-                        <p class="text-gray-700 dark:text-gray-300"><strong>Total Amount:</strong> ${formatCurrency(job.totalAmount)}</p>
+                        <p class="text-gray-700 dark:text-gray-300"><strong>Total Amount:</strong> ${formatCurrency(job.amount)}</p>
                     </div>
                 </div>
                 
@@ -421,4 +442,33 @@ window.closeJobDetails = function() {
     if (jobDetails && jobDetails.querySelector('h3').textContent === 'Job Details') {
         jobDetails.remove();
     }
-}; 
+};
+
+// Initialize jobs page
+function initializeJobs() {
+    // Load vendors dropdown
+    loadVendorsDropdown();
+    
+    // Add empty product row
+    if (document.querySelector('#jobProductsTable tbody').children.length === 0) {
+        addProductRow();
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize jobs page when it's loaded
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            const page = this.getAttribute('data-page');
+            if (page === 'jobs') {
+                setTimeout(initializeJobs, 100); // Small delay to ensure DOM is updated
+            }
+        });
+    });
+    
+    // Initialize if we're already on the jobs page
+    if (document.getElementById('jobs-page').classList.contains('active')) {
+        initializeJobs();
+    }
+}); 
