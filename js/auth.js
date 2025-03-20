@@ -7,7 +7,7 @@ function handleLogin(e) {
     
     // Validate inputs
     if (!username || !password) {
-        alert('Please enter both username and password');
+        alert('Please enter username and password');
         return;
     }
     
@@ -15,17 +15,34 @@ function handleLogin(e) {
     const user = users.find(u => u.username === username && u.password === password);
     
     if (user) {
+        // Check if user is active
         if (!user.active) {
-            alert('Your account is inactive. Please contact the administrator.');
+            alert('Your account has been deactivated. Please contact administrator.');
             return;
         }
         
         // Set current user
         currentUser = user;
+        
+        // Save to session storage
         sessionStorage.setItem('currentUser', JSON.stringify(user));
         
         // Show admin panel
         showAdminPanel();
+        
+        // Make sure all data is loaded
+        refreshData();
+        
+        // Load appropriate page based on user role
+        if (user.role === 'admin' || user.role === 'subadmin') {
+            loadPage('dashboard');
+        } else if (user.role === 'vendor') {
+            loadPage('jobs-list'); // Vendors go directly to jobs list
+        } else {
+            loadPage('dashboard');
+        }
+        
+        console.log('Login successful:', user.username, '('+user.role+')');
     } else {
         alert('Invalid username or password');
     }
@@ -164,4 +181,53 @@ function loadPage(page) {
             link.classList.add('active');
         }
     });
+}
+
+// Activate user session
+function activateUserSession() {
+    // Update user info in header
+    document.getElementById('currentUserName').textContent = currentUser.username;
+    document.getElementById('currentUserRole').textContent = currentUser.role;
+    
+    // Show/hide admin elements based on role
+    const isAdmin = currentUser.role === 'admin';
+    const isSubAdmin = currentUser.role === 'subadmin';
+    const isVendor = currentUser.role === 'vendor';
+    
+    // Show admin dashboard for admin and subadmin
+    if (isAdmin || isSubAdmin) {
+        document.getElementById('adminDashboard').classList.remove('hidden');
+    } else {
+        document.getElementById('adminDashboard').classList.add('hidden');
+    }
+    
+    // Show users management only for admin
+    if (isAdmin) {
+        document.getElementById('usersNav').classList.remove('hidden');
+        document.getElementById('settingsNav').classList.remove('hidden');
+    } else {
+        document.getElementById('usersNav').classList.add('hidden');
+        document.getElementById('settingsNav').classList.add('hidden');
+    }
+    
+    // For vendors, hide certain sections and elements
+    if (isVendor) {
+        // Hide job management 
+        const allSections = document.querySelectorAll('.page-section');
+        allSections.forEach(section => {
+            if (section.id === 'jobs-page') {
+                section.classList.add('hidden');
+            }
+        });
+        
+        // Hide irrelevant navigation items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            const page = item.querySelector('.nav-link').getAttribute('data-page');
+            if (page === 'jobs' || page === 'user-product' || page === 'settings') {
+                item.classList.add('hidden');
+            }
+        });
+    }
+    
+    console.log('User session activated for', currentUser.username, '('+currentUser.role+')');
 } 

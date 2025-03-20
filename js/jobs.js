@@ -479,6 +479,8 @@ function ensureVendorExists() {
         users.push(newVendor);
         saveDataToLocalStorage();
         console.log("Default vendor created:", newVendor);
+    } else {
+        console.log("Vendor users already exist:", vendorUsers.length);
     }
 }
 

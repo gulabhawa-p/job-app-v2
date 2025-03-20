@@ -65,6 +65,18 @@ function loadDataFromLocalStorage() {
             active: true
         });
         
+        // SubAdmin user
+        users.push({
+            id: generateId(),
+            username: 'subadmin',
+            password: 'subadmin123',
+            name: 'Sub Admin',
+            role: 'subadmin',
+            email: 'subadmin@example.com',
+            phone: '1234567890',
+            active: true
+        });
+        
         // Vendor user
         users.push({
             id: generateId(),
