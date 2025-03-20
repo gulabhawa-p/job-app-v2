@@ -4,14 +4,10 @@ document.getElementById('userForm').addEventListener('submit', function(e) {
     
     const username = document.getElementById('userUsername').value;
     const password = document.getElementById('userPassword').value;
-    const name = document.getElementById('userName').value;
-    const email = document.getElementById('userEmail').value;
-    const phone = document.getElementById('userPhone').value;
     const role = document.getElementById('userRole').value;
-    const active = document.getElementById('userActive').checked;
     
     // Validate inputs
-    if (!username || !name || !email || !role) {
+    if (!username || !role) {
         alert('Please fill all required fields');
         return;
     }
@@ -30,11 +26,8 @@ document.getElementById('userForm').addEventListener('submit', function(e) {
             const updatedUser = {
                 ...users[index],
                 username,
-                name,
-                email,
-                phone,
                 role,
-                active
+                active: true
             };
             
             if (password) {
@@ -58,11 +51,11 @@ document.getElementById('userForm').addEventListener('submit', function(e) {
             id: generateId(),
             username,
             password: password || 'password123',
-            name,
-            email,
-            phone,
+            name: username,
+            email: '',
+            phone: '',
             role,
-            active
+            active: true
         };
         
         users.push(newUser);
@@ -84,7 +77,7 @@ function refreshUsersList() {
     usersList.innerHTML = '';
     
     if (users.length === 0) {
-        usersList.innerHTML = '<tr><td colspan="6" class="px-4 py-2 text-center text-gray-800 dark:text-gray-300">No users found</td></tr>';
+        usersList.innerHTML = '<tr><td colspan="4" class="px-4 py-2 text-center text-gray-800 dark:text-gray-300">No users found</td></tr>';
         return;
     }
     
@@ -92,17 +85,9 @@ function refreshUsersList() {
         const tr = document.createElement('tr');
         tr.className = 'border-t dark:border-gray-700';
         
-        const nameCell = document.createElement('td');
-        nameCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
-        nameCell.textContent = user.name;
-        
         const usernameCell = document.createElement('td');
         usernameCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
         usernameCell.textContent = user.username;
-        
-        const emailCell = document.createElement('td');
-        emailCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
-        emailCell.textContent = user.email;
         
         const roleCell = document.createElement('td');
         roleCell.className = 'px-4 py-2 text-gray-800 dark:text-gray-300';
@@ -135,9 +120,7 @@ function refreshUsersList() {
             actionsCell.appendChild(deleteButton);
         }
         
-        tr.appendChild(nameCell);
         tr.appendChild(usernameCell);
-        tr.appendChild(emailCell);
         tr.appendChild(roleCell);
         tr.appendChild(statusCell);
         tr.appendChild(actionsCell);
@@ -152,11 +135,7 @@ window.editUser = function(id) {
     if (user) {
         document.getElementById('userUsername').value = user.username;
         document.getElementById('userPassword').value = '';
-        document.getElementById('userName').value = user.name;
-        document.getElementById('userEmail').value = user.email;
-        document.getElementById('userPhone').value = user.phone || '';
         document.getElementById('userRole').value = user.role;
-        document.getElementById('userActive').checked = user.active;
         
         document.querySelector('#userForm button[type="submit"]').textContent = 'Update User';
         
