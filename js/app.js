@@ -29,14 +29,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load data from localStorage
 function loadDataFromLocalStorage() {
-    users = JSON.parse(localStorage.getItem('users')) || [];
-    products = JSON.parse(localStorage.getItem('products')) || [];
-    jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    payments = JSON.parse(localStorage.getItem('payments')) || [];
-    systemSettings = JSON.parse(localStorage.getItem('systemSettings')) || systemSettings;
+    console.log("Loading data from localStorage");
+    
+    try {
+        users = JSON.parse(localStorage.getItem('users')) || [];
+        console.log("Loaded users:", users.length);
+        
+        products = JSON.parse(localStorage.getItem('products')) || [];
+        console.log("Loaded products:", products.length);
+        
+        jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+        console.log("Loaded jobs:", jobs.length);
+        
+        payments = JSON.parse(localStorage.getItem('payments')) || [];
+        console.log("Loaded payments:", payments.length);
+        
+        systemSettings = JSON.parse(localStorage.getItem('systemSettings')) || systemSettings;
+        console.log("Loaded system settings");
+    } catch (error) {
+        console.error("Error loading data from localStorage:", error);
+    }
     
     // Create default users if no users exist
     if (users.length === 0) {
+        console.log("Creating default users");
         // Admin user
         users.push({
             id: generateId(),
@@ -49,53 +65,40 @@ function loadDataFromLocalStorage() {
             active: true
         });
         
-        // Subadmin user
-        users.push({
-            id: generateId(),
-            username: 'subadmin',
-            password: 'subadmin123',
-            name: 'Sub Administrator',
-            role: 'subadmin',
-            email: 'subadmin@example.com',
-            phone: '1234567891',
-            active: true
-        });
-        
         // Vendor user
         users.push({
             id: generateId(),
             username: 'vendor',
             password: 'vendor123',
-            name: 'Vendor User',
-            role: 'user',
+            name: 'Vendor',
+            role: 'vendor',
             email: 'vendor@example.com',
-            phone: '1234567892',
+            phone: '1234567890',
             active: true
         });
         
-        // Account user
-        users.push({
-            id: generateId(),
-            username: 'account',
-            password: 'account123',
-            name: 'Account User',
-            role: 'user',
-            email: 'account@example.com',
-            phone: '1234567893',
-            active: true
-        });
-        
+        // Save users to localStorage
         saveDataToLocalStorage();
+        console.log("Default users created:", users);
+    } else {
+        console.log("Users already exist:", users.length);
     }
 }
 
 // Save data to localStorage
 function saveDataToLocalStorage() {
-    localStorage.setItem('users', JSON.stringify(users));
-    localStorage.setItem('products', JSON.stringify(products));
-    localStorage.setItem('jobs', JSON.stringify(jobs));
-    localStorage.setItem('payments', JSON.stringify(payments));
-    localStorage.setItem('systemSettings', JSON.stringify(systemSettings));
+    console.log("Saving data to localStorage");
+    
+    try {
+        localStorage.setItem('users', JSON.stringify(users));
+        localStorage.setItem('products', JSON.stringify(products));
+        localStorage.setItem('jobs', JSON.stringify(jobs));
+        localStorage.setItem('payments', JSON.stringify(payments));
+        localStorage.setItem('systemSettings', JSON.stringify(systemSettings));
+        console.log("Data saved successfully");
+    } catch (error) {
+        console.error("Error saving data to localStorage:", error);
+    }
 }
 
 // Initialize UI

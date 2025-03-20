@@ -91,16 +91,26 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
 
 // Load vendors dropdown
 function loadVendorsDropdown() {
+    console.log("Loading vendors dropdown");
     const vendorSelect = document.getElementById('jobVendor');
-    if (!vendorSelect) return;
+    if (!vendorSelect) {
+        console.error("Vendor select element not found");
+        return;
+    }
     
     // Clear existing options except first one
     while (vendorSelect.options.length > 1) {
         vendorSelect.remove(1);
     }
     
-    // Get vendor users
-    const vendorUsers = users.filter(user => user.role === 'vendor' && user.active);
+    // Get all users with vendor role
+    console.log("Total users:", users.length);
+    const vendorUsers = users.filter(user => user.role === 'vendor');
+    console.log("Vendor users found:", vendorUsers.length, vendorUsers);
+    
+    if (vendorUsers.length === 0) {
+        console.warn("No vendor users found in the system");
+    }
     
     // Add vendor options
     vendorUsers.forEach(vendor => {
@@ -108,7 +118,10 @@ function loadVendorsDropdown() {
         option.value = vendor.username;
         option.textContent = vendor.username;
         vendorSelect.appendChild(option);
+        console.log("Added vendor option:", vendor.username);
     });
+    
+    console.log("Vendor dropdown populated with", vendorSelect.options.length - 1, "options");
 }
 
 // Add product row to job form
@@ -444,31 +457,80 @@ window.closeJobDetails = function() {
     }
 };
 
+// Ensure vendor exists
+function ensureVendorExists() {
+    console.log("Ensuring vendor exists");
+    const vendorUsers = users.filter(user => user.role === 'vendor');
+    
+    if (vendorUsers.length === 0) {
+        console.warn("No vendor users found, creating a default vendor");
+        // Create a default vendor user
+        const newVendor = {
+            id: generateId(),
+            username: 'vendor',
+            password: 'vendor123',
+            name: 'Vendor',
+            role: 'vendor',
+            email: 'vendor@example.com',
+            phone: '1234567890',
+            active: true
+        };
+        
+        users.push(newVendor);
+        saveDataToLocalStorage();
+        console.log("Default vendor created:", newVendor);
+    }
+}
+
 // Initialize jobs page
 function initializeJobs() {
+    console.log("Initializing jobs page");
+    
+    // Ensure at least one vendor exists
+    ensureVendorExists();
+    
     // Load vendors dropdown
     loadVendorsDropdown();
     
-    // Add empty product row
-    if (document.querySelector('#jobProductsTable tbody').children.length === 0) {
+    // Add a product row if none exists
+    const tbody = document.querySelector('#jobProductsTable tbody');
+    if (!tbody) {
+        console.error("Product table body not found");
+        return;
+    }
+    
+    console.log("Current product rows:", tbody.children.length);
+    if (tbody.children.length === 0) {
+        console.log("Adding initial product row");
         addProductRow();
     }
 }
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM loaded for jobs.js");
+    
+    // Check if users array is populated
+    console.log("Users available in jobs.js:", users.length);
+    
+    // Check if any vendors exist
+    const vendorUsers = users.filter(user => user.role === 'vendor');
+    console.log("Vendor users available:", vendorUsers.length);
+    
     // Initialize jobs page when it's loaded
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function(e) {
             const page = this.getAttribute('data-page');
             if (page === 'jobs') {
+                console.log("Jobs page navigation detected");
                 setTimeout(initializeJobs, 100); // Small delay to ensure DOM is updated
             }
         });
     });
     
     // Initialize if we're already on the jobs page
-    if (document.getElementById('jobs-page').classList.contains('active')) {
-        initializeJobs();
+    if (document.getElementById('jobs-page') && document.getElementById('jobs-page').classList.contains('active')) {
+        console.log("Already on jobs page, initializing...");
+        setTimeout(initializeJobs, 100);
     }
 }); 
